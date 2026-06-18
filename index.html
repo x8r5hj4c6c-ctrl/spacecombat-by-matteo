@@ -1,0 +1,3086 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <title>SpaceCombat by Matteo</title>
+  <style>
+    :root {
+      --bg: #05070b;
+      --panel: rgba(12, 17, 24, 0.88);
+      --panel-soft: rgba(255, 255, 255, 0.07);
+      --line: rgba(255, 255, 255, 0.16);
+      --text: #f6f7fb;
+      --muted: #a7b2bf;
+      --teal: #22d3b6;
+      --coral: #ff6b4a;
+      --gold: #ffd166;
+      --green: #79e66f;
+      --sky: #8bd7ff;
+      --danger: #ff405d;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      overflow: hidden;
+      background: var(--bg);
+      color: var(--text);
+      letter-spacing: 0;
+      touch-action: none;
+      user-select: none;
+    }
+
+    body {
+      min-height: 100svh;
+    }
+
+    button,
+    input {
+      font: inherit;
+    }
+
+    #app {
+      position: fixed;
+      inset: 0;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 18% 12%, rgba(34, 211, 182, 0.12), transparent 32%),
+        radial-gradient(circle at 82% 18%, rgba(255, 107, 74, 0.1), transparent 30%),
+        linear-gradient(180deg, #070910 0%, #05070b 62%, #090b11 100%);
+    }
+
+    canvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .screen {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      padding: max(14px, env(safe-area-inset-top)) max(14px, env(safe-area-inset-right)) max(14px, env(safe-area-inset-bottom)) max(14px, env(safe-area-inset-left));
+      background: linear-gradient(180deg, rgba(5, 7, 11, 0.9), rgba(5, 7, 11, 0.58));
+      backdrop-filter: blur(10px);
+      z-index: 20;
+    }
+
+    .screen.hidden {
+      display: none;
+    }
+
+    .hangar {
+      width: min(100%, 980px);
+      max-height: calc(100svh - 28px);
+      overflow: auto;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      box-shadow: 0 24px 70px rgba(0, 0, 0, 0.36);
+    }
+
+    .hangar-head {
+      display: grid;
+      grid-template-columns: minmax(0, 1.1fr) minmax(220px, 0.9fr);
+      gap: 18px;
+      padding: 18px;
+      border-bottom: 1px solid var(--line);
+      background: linear-gradient(135deg, rgba(34, 211, 182, 0.14), rgba(255, 107, 74, 0.09));
+    }
+
+    .title-block {
+      min-width: 0;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(2rem, 7vw, 5rem);
+      line-height: 0.92;
+      font-weight: 900;
+    }
+
+    .subtitle {
+      margin: 10px 0 0;
+      color: var(--muted);
+      font-size: clamp(0.9rem, 2.6vw, 1rem);
+      line-height: 1.45;
+      max-width: 58ch;
+    }
+
+    .ship-preview {
+      min-height: 190px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(0, 0, 0, 0.2);
+      position: relative;
+      overflow: hidden;
+    }
+
+    #previewCanvas {
+      width: 100%;
+      height: 100%;
+      position: absolute;
+      inset: 0;
+    }
+
+    .hangar-body {
+      display: grid;
+      grid-template-columns: minmax(220px, 0.9fr) minmax(0, 1.4fr);
+      gap: 16px;
+      padding: 16px;
+    }
+
+    .tabs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+      padding: 4px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .tab-btn,
+    .choice,
+    .primary,
+    .ghost,
+    .icon-btn {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.07);
+      cursor: pointer;
+      min-height: 44px;
+    }
+
+    .tab-btn {
+      padding: 10px;
+      font-weight: 800;
+      color: var(--muted);
+    }
+
+    .tab-btn.active {
+      color: #07100d;
+      border-color: transparent;
+      background: var(--teal);
+    }
+
+    .garage-panel {
+      display: none;
+      gap: 14px;
+    }
+
+    .garage-panel.active {
+      display: grid;
+    }
+
+    .group {
+      display: grid;
+      gap: 8px;
+    }
+
+    .group-title {
+      font-size: 0.82rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      font-weight: 900;
+    }
+
+    .choice-grid {
+      display: grid;
+      gap: 8px;
+    }
+
+    .choice {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      align-items: center;
+      width: 100%;
+      padding: 11px 12px;
+      text-align: left;
+    }
+
+    .choice strong {
+      display: block;
+      font-size: 0.96rem;
+    }
+
+    .choice span {
+      display: block;
+      margin-top: 3px;
+      color: var(--muted);
+      font-size: 0.8rem;
+      line-height: 1.25;
+    }
+
+    .choice .tag {
+      margin: 0;
+      min-width: 48px;
+      padding: 6px 8px;
+      border-radius: 999px;
+      text-align: center;
+      color: #07100d;
+      background: var(--gold);
+      font-size: 0.72rem;
+      font-weight: 900;
+    }
+
+    .choice.active {
+      border-color: rgba(34, 211, 182, 0.9);
+      background: rgba(34, 211, 182, 0.13);
+    }
+
+    .choice.locked {
+      opacity: 0.52;
+      cursor: not-allowed;
+    }
+
+    .swatches,
+    .compact-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+    }
+
+    .swatch {
+      min-height: 44px;
+      border: 2px solid transparent;
+      border-radius: 8px;
+      cursor: pointer;
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.3);
+    }
+
+    .swatch.active {
+      border-color: #fff;
+      box-shadow: 0 0 0 3px rgba(34, 211, 182, 0.22);
+    }
+
+    .compact-grid .choice {
+      grid-template-columns: 1fr;
+      text-align: center;
+      min-height: 54px;
+      padding: 10px 8px;
+    }
+
+    .quest-list {
+      display: grid;
+      gap: 8px;
+    }
+
+    .quest-row {
+      display: grid;
+      gap: 7px;
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.055);
+    }
+
+    .quest-row.done {
+      border-color: rgba(121, 230, 111, 0.72);
+      background: rgba(121, 230, 111, 0.1);
+    }
+
+    .quest-row b {
+      font-size: 0.9rem;
+    }
+
+    .quest-row span {
+      color: var(--muted);
+      font-size: 0.78rem;
+      line-height: 1.3;
+    }
+
+    .quest-progress {
+      height: 6px;
+      overflow: hidden;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.09);
+    }
+
+    .quest-progress i {
+      display: block;
+      height: 100%;
+      width: 0;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--teal), var(--gold));
+    }
+
+    .stats {
+      display: grid;
+      gap: 12px;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .stat {
+      display: grid;
+      gap: 6px;
+    }
+
+    .stat-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      color: var(--muted);
+      font-size: 0.82rem;
+      font-weight: 800;
+    }
+
+    .meter {
+      height: 8px;
+      border-radius: 999px;
+      overflow: hidden;
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .meter > i {
+      display: block;
+      height: 100%;
+      width: 50%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--teal), var(--gold), var(--coral));
+    }
+
+    .action-row {
+      display: grid;
+      grid-template-columns: 1fr 0.45fr;
+      gap: 10px;
+      margin-top: 2px;
+    }
+
+    .primary,
+    .ghost {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 12px 14px;
+      font-weight: 900;
+      text-transform: uppercase;
+      min-width: 0;
+    }
+
+    .primary {
+      color: #07100d;
+      border-color: transparent;
+      background: linear-gradient(135deg, var(--teal), var(--gold));
+    }
+
+    .ghost {
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.06);
+    }
+
+    .hud {
+      position: absolute;
+      left: max(12px, env(safe-area-inset-left));
+      right: max(12px, env(safe-area-inset-right));
+      top: max(10px, env(safe-area-inset-top));
+      z-index: 10;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      pointer-events: none;
+    }
+
+    .hud.hidden {
+      display: none;
+    }
+
+    .hud-main {
+      display: grid;
+      grid-template-columns: minmax(120px, 1fr) auto auto;
+      gap: 8px;
+      align-items: center;
+      min-height: 46px;
+      padding: 8px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(5, 7, 11, 0.58);
+      backdrop-filter: blur(8px);
+    }
+
+    .brand {
+      min-width: 0;
+      font-weight: 900;
+      font-size: 0.92rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .tiny {
+      color: var(--muted);
+      font-size: 0.75rem;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .hp-wrap {
+      display: grid;
+      gap: 4px;
+      min-width: 96px;
+    }
+
+    .hp-bar {
+      height: 9px;
+      overflow: hidden;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    #hpFill {
+      display: block;
+      width: 100%;
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--green), var(--gold), var(--danger));
+      transform-origin: left center;
+    }
+
+    .icon-btn {
+      width: 46px;
+      height: 46px;
+      pointer-events: auto;
+      display: inline-grid;
+      place-items: center;
+      font-weight: 900;
+      background: rgba(5, 7, 11, 0.62);
+      backdrop-filter: blur(8px);
+    }
+
+    .bottom-controls {
+      position: absolute;
+      left: max(12px, env(safe-area-inset-left));
+      right: max(12px, env(safe-area-inset-right));
+      bottom: max(12px, env(safe-area-inset-bottom));
+      z-index: 11;
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      pointer-events: none;
+    }
+
+    .bottom-controls.hidden {
+      display: none;
+    }
+
+    .power-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      align-items: flex-end;
+      max-width: min(64vw, 560px);
+    }
+
+    .power-pill {
+      padding: 7px 9px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: rgba(5, 7, 11, 0.62);
+      color: var(--text);
+      backdrop-filter: blur(8px);
+      font-size: 0.76rem;
+      font-weight: 900;
+    }
+
+    .boss-wrap {
+      position: absolute;
+      left: 50%;
+      top: max(62px, calc(env(safe-area-inset-top) + 62px));
+      width: min(520px, calc(100vw - 24px));
+      transform: translateX(-50%);
+      z-index: 10;
+      display: grid;
+      gap: 5px;
+      pointer-events: none;
+    }
+
+    .boss-wrap.hidden {
+      display: none;
+    }
+
+    .boss-label {
+      display: flex;
+      justify-content: space-between;
+      color: var(--muted);
+      font-size: 0.75rem;
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+
+    .boss-meter {
+      height: 10px;
+      border-radius: 999px;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    #bossFill {
+      height: 100%;
+      width: 100%;
+      background: linear-gradient(90deg, var(--danger), var(--coral), var(--gold));
+    }
+
+    .toast {
+      position: absolute;
+      left: 50%;
+      top: 20%;
+      z-index: 12;
+      min-width: min(80vw, 380px);
+      padding: 12px 14px;
+      transform: translateX(-50%);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(5, 7, 11, 0.72);
+      backdrop-filter: blur(8px);
+      text-align: center;
+      font-weight: 900;
+      opacity: 0;
+      transition: opacity 180ms ease;
+      pointer-events: none;
+    }
+
+    .toast.show {
+      opacity: 1;
+    }
+
+    .results {
+      display: grid;
+      gap: 14px;
+      padding: 18px;
+    }
+
+    .score-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+
+    .score-box {
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.06);
+    }
+
+    .score-box b {
+      display: block;
+      font-size: clamp(1.1rem, 7vw, 2.2rem);
+      line-height: 1;
+    }
+
+    .score-box span {
+      color: var(--muted);
+      font-size: 0.75rem;
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+
+    @media (max-width: 760px) {
+      .screen {
+        place-items: stretch;
+      }
+
+      .hangar {
+        width: 100%;
+        max-height: calc(100svh - 28px);
+      }
+
+      .hangar-head,
+      .hangar-body {
+        grid-template-columns: 1fr;
+      }
+
+      .hangar-head {
+        padding: 14px;
+      }
+
+      .ship-preview {
+        min-height: 150px;
+      }
+
+      .hangar-body {
+        padding: 12px;
+      }
+
+      .action-row {
+        grid-template-columns: 1fr;
+      }
+
+      .hud-main {
+        grid-template-columns: 1fr auto;
+      }
+
+      .hp-wrap {
+        grid-column: 1 / -1;
+      }
+
+      .score-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 390px) {
+      .swatches,
+      .compact-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .choice {
+        grid-template-columns: 1fr;
+      }
+
+      .choice .tag {
+        justify-self: start;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main id="app" aria-label="SpaceCombat by Matteo">
+    <canvas id="gameCanvas"></canvas>
+
+    <section id="menuScreen" class="screen">
+      <div class="hangar">
+        <div class="hangar-head">
+          <div class="title-block">
+            <h1>SpaceCombat by Matteo</h1>
+            <p class="subtitle">Hangar operativo: scegli motore, scafo e stile. Una sola vita, alieni sempre piu forti, potenziamenti e boss a intervalli regolari.</p>
+          </div>
+          <div class="ship-preview">
+            <canvas id="previewCanvas"></canvas>
+          </div>
+        </div>
+
+        <div class="hangar-body">
+          <aside class="stats" aria-label="Statistiche navicella">
+            <div class="tabs" role="tablist">
+              <button class="tab-btn active" id="techTab" type="button" data-tab="tech">Tecnica</button>
+              <button class="tab-btn" id="styleTab" type="button" data-tab="style">Stile</button>
+            </div>
+
+            <div class="stat">
+              <div class="stat-top"><span>Velocita</span><strong id="statSpeed">0</strong></div>
+              <div class="meter"><i id="barSpeed"></i></div>
+            </div>
+            <div class="stat">
+              <div class="stat-top"><span>Scafo</span><strong id="statArmor">0</strong></div>
+              <div class="meter"><i id="barArmor"></i></div>
+            </div>
+            <div class="stat">
+              <div class="stat-top"><span>Fuoco</span><strong id="statFire">0</strong></div>
+              <div class="meter"><i id="barFire"></i></div>
+            </div>
+            <div class="stat">
+              <div class="stat-top"><span>Agilita</span><strong id="statAgility">0</strong></div>
+              <div class="meter"><i id="barAgility"></i></div>
+            </div>
+            <div class="stat">
+              <div class="stat-top"><span>Record salvato</span><strong id="statRecord">0</strong></div>
+              <div class="meter"><i id="barRecord"></i></div>
+            </div>
+
+            <div class="action-row">
+              <button id="startBtn" class="primary" type="button">Avvia missione</button>
+              <button id="resetBtn" class="ghost" type="button">Reset</button>
+            </div>
+          </aside>
+
+          <section id="techPanel" class="garage-panel active" aria-labelledby="techTab">
+            <div class="group">
+              <div class="group-title">Motore</div>
+              <div id="engineChoices" class="choice-grid"></div>
+            </div>
+            <div class="group">
+              <div class="group-title">Scafo</div>
+              <div id="hullChoices" class="choice-grid"></div>
+            </div>
+          </section>
+
+          <section id="stylePanel" class="garage-panel" aria-labelledby="styleTab">
+            <div class="group">
+              <div class="group-title">Colore</div>
+              <div id="colorChoices" class="swatches"></div>
+            </div>
+            <div class="group">
+              <div class="group-title">Punta</div>
+              <div id="noseChoices" class="compact-grid"></div>
+            </div>
+            <div class="group">
+              <div class="group-title">Alette</div>
+              <div id="finChoices" class="compact-grid"></div>
+            </div>
+            <div class="group">
+              <div class="group-title">Scia</div>
+              <div id="trailChoices" class="compact-grid"></div>
+            </div>
+            <div class="group">
+              <div class="group-title">Skin speciali</div>
+              <div id="skinChoices" class="choice-grid"></div>
+            </div>
+            <div class="group">
+              <div class="group-title">Quest</div>
+              <div id="questList" class="quest-list"></div>
+            </div>
+          </section>
+        </div>
+      </div>
+    </section>
+
+    <section id="gameOverScreen" class="screen hidden">
+      <div class="hangar">
+        <div class="hangar-head">
+          <div>
+            <h1>Missione finita</h1>
+            <p class="subtitle">La navicella aveva una sola vita. Torna in hangar, cambia assetto e riprova la corsa endless.</p>
+          </div>
+          <div class="ship-preview">
+            <canvas id="overCanvas"></canvas>
+          </div>
+        </div>
+        <div class="results">
+          <div class="score-grid">
+            <div class="score-box"><b id="finalScore">0</b><span>Punti</span></div>
+            <div class="score-box"><b id="finalTime">0s</b><span>Tempo</span></div>
+            <div class="score-box"><b id="finalBosses">0</b><span>Boss</span></div>
+          </div>
+          <div class="score-grid">
+            <div class="score-box"><b id="bestScore">0</b><span>Record</span></div>
+            <div class="score-box"><b id="finalKills">0</b><span>Alieni</span></div>
+            <div class="score-box"><b id="finalLevel">1</b><span>Livello</span></div>
+          </div>
+          <div class="action-row">
+            <button id="retryBtn" class="primary" type="button">Riprova</button>
+            <button id="hangarBtn" class="ghost" type="button">Hangar</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div id="hud" class="hud hidden">
+      <div class="hud-main">
+        <div>
+          <div class="brand">SpaceCombat by Matteo</div>
+          <div class="tiny"><span id="scoreText">0</span> punti / <span id="timeText">0s</span> / livello <span id="levelText">1</span></div>
+        </div>
+        <div class="tiny">Vita unica</div>
+        <div class="hp-wrap">
+          <div class="tiny">Scafo <span id="hpText">100%</span></div>
+          <div class="hp-bar"><i id="hpFill"></i></div>
+        </div>
+      </div>
+      <button id="pauseBtn" class="icon-btn" type="button" aria-label="Pausa">II</button>
+    </div>
+
+    <div id="bossBar" class="boss-wrap hidden">
+      <div class="boss-label"><span id="bossName">Boss</span><span id="bossHpText">100%</span></div>
+      <div class="boss-meter"><div id="bossFill"></div></div>
+    </div>
+
+    <div id="bottomControls" class="bottom-controls hidden">
+      <div id="powerList" class="power-list"></div>
+    </div>
+
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  </main>
+
+  <script>
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+    const previewCanvas = document.getElementById("previewCanvas");
+    const previewCtx = previewCanvas.getContext("2d");
+    const overCanvas = document.getElementById("overCanvas");
+    const overCtx = overCanvas.getContext("2d");
+
+    const menuScreen = document.getElementById("menuScreen");
+    const gameOverScreen = document.getElementById("gameOverScreen");
+    const hud = document.getElementById("hud");
+    const bottomControls = document.getElementById("bottomControls");
+    const bossBar = document.getElementById("bossBar");
+    const toast = document.getElementById("toast");
+
+    const scoreText = document.getElementById("scoreText");
+    const timeText = document.getElementById("timeText");
+    const levelText = document.getElementById("levelText");
+    const hpText = document.getElementById("hpText");
+    const hpFill = document.getElementById("hpFill");
+    const bossName = document.getElementById("bossName");
+    const bossHpText = document.getElementById("bossHpText");
+    const bossFill = document.getElementById("bossFill");
+    const powerList = document.getElementById("powerList");
+    const engines = [
+      { id: "core", name: "Core S-1", desc: "Equilibrato e stabile", speed: 1, fire: 1, agility: 1, tag: "Base" },
+      { id: "pulse", name: "Pulse VX", desc: "Piu sprint e ricarica rapida", speed: 1.15, fire: 1.1, agility: 1.05, tag: "+Vel" },
+      { id: "ion", name: "Ion Wing", desc: "Massima manovra, colpi leggeri", speed: 1.28, fire: 0.92, agility: 1.25, tag: "+Agi" },
+      { id: "nova", name: "Nova Forge", desc: "Fuoco pesante, movimento solido", speed: 0.96, fire: 1.32, agility: 0.92, tag: "+Dps" }
+    ];
+
+    const hulls = [
+      { id: "scout", name: "Scout", desc: "Scafo leggero, hitbox stretta", hp: 90, armor: 0.92, size: 0.9, speed: 1.08, tag: "Rapido" },
+      { id: "guardian", name: "Guardian", desc: "Bilanciato per run lunghe", hp: 120, armor: 0.82, size: 1, speed: 1, tag: "Medio" },
+      { id: "bastion", name: "Bastion", desc: "Resistente ma piu pesante", hp: 155, armor: 0.68, size: 1.13, speed: 0.9, tag: "Tank" }
+    ];
+
+    const colors = ["#22d3b6", "#ff6b4a", "#ffd166", "#8bd7ff", "#79e66f", "#f7a8ff", "#ffffff", "#ff3f6e"];
+    const noses = [
+      { id: "sharp", name: "Lama" },
+      { id: "round", name: "Cupola" },
+      { id: "split", name: "Doppia" },
+      { id: "heavy", name: "Corazza" }
+    ];
+    const fins = [
+      { id: "wide", name: "Ampie" },
+      { id: "short", name: "Corte" },
+      { id: "hook", name: "Artiglio" },
+      { id: "none", name: "Pulite" }
+    ];
+    const trails = [
+      { id: "neon", name: "Neon" },
+      { id: "ember", name: "Brace" },
+      { id: "ice", name: "Ghiaccio" },
+      { id: "spark", name: "Scintilla" }
+    ];
+
+    const alienTypes = [
+      { id: "drone", name: "Larva Verde", color: "#7cff47", radius: 14, hp: 16, speed: 86, damage: 9, score: 12, pattern: "drone", unlock: 0, ability: "wander" },
+      { id: "zig", name: "Scattoide", color: "#ffcc3d", radius: 15, hp: 20, speed: 104, damage: 11, score: 18, pattern: "zig", unlock: 8, ability: "dash" },
+      { id: "brute", name: "Carapace", color: "#d83b4d", radius: 22, hp: 48, speed: 62, damage: 18, score: 34, pattern: "brute", unlock: 18, ability: "ram" },
+      { id: "splitter", name: "Spora Violetta", color: "#a66cff", radius: 18, hp: 32, speed: 76, damage: 13, score: 28, pattern: "spore", unlock: 30, ability: "split" },
+      { id: "sniper", name: "Occhio Mentale", color: "#ff77c8", radius: 16, hp: 28, speed: 54, damage: 12, score: 32, pattern: "sniper", unlock: 34, ability: "aim", weight: 1.55 },
+      { id: "shield", name: "Custode Acido", color: "#b7ff36", radius: 19, hp: 40, speed: 66, damage: 14, score: 36, pattern: "guardian", unlock: 58, ability: "aura" },
+      { id: "bomber", name: "Sacca Esplosiva", color: "#ff8a2a", radius: 20, hp: 38, speed: 72, damage: 18, score: 40, pattern: "bomber", unlock: 72, ability: "mines" },
+      { id: "swarm", name: "Parassita", color: "#ff4dff", radius: 11, hp: 12, speed: 128, damage: 8, score: 16, pattern: "swarm", unlock: 64, ability: "hunt", weight: 1.85 }
+    ];
+
+    const bossTypes = [
+      { id: "tyrant", name: "Nebula Tyrant", color: "#ff405d", ability: "ventaglio" },
+      { id: "mantis", name: "Void Mantis", color: "#a66cff", ability: "carica" },
+      { id: "carrier", name: "Meteor Carrier", color: "#ff8a2a", ability: "asteroidi" },
+      { id: "warden", name: "Solar Warden", color: "#ffd166", ability: "spirale" }
+    ];
+
+    const specialSkins = [
+      { id: "standard", name: "Hangar", desc: "Usa le parti e i colori scelti", tag: "Base" },
+      { id: "nebula", name: "Nebula Venom", desc: "Vernice cosmica con stelle vive", tag: "300s", quest: "survive300", color: "#7b4dff", accent: "#22d3b6", secondary: "#f7a8ff", nose: "split", fins: "hook", trail: "neon" },
+      { id: "hunter", name: "Predator Lime", desc: "Artigli rossi e armatura tossica", tag: "320 KO", quest: "hunter320", color: "#b7ff36", accent: "#ff405d", secondary: "#07100d", nose: "sharp", fins: "wide", trail: "spark" },
+      { id: "tyrant", name: "Tyrant Red", desc: "Corazza reale con nucleo dorato", tag: "6 Boss", quest: "boss6", color: "#b81732", accent: "#ffd166", secondary: "#ffffff", nose: "heavy", fins: "hook", trail: "ember" },
+      { id: "meteor", name: "Meteor Ghost", desc: "Pietra spaziale con lava interna", tag: "95 rocce", quest: "dodge95", color: "#817367", accent: "#ff8a2a", secondary: "#ffd166", nose: "round", fins: "short", trail: "ember" }
+    ];
+
+    const questDefs = [
+      { id: "survive300", aliases: ["survive180", "survive60"], name: "Pilota freddo", desc: "Sopravvivi 300 secondi in una missione", target: 300, stat: "time", skin: "nebula" },
+      { id: "hunter320", aliases: ["hunter180", "hunter45"], name: "Cacciatore spaziale", desc: "Elimina 320 alieni in una missione", target: 320, stat: "kills", skin: "hunter" },
+      { id: "boss6", aliases: ["boss3", "boss1"], name: "Taglia grossa", desc: "Distruggi 6 boss in una missione", target: 6, stat: "bosses", skin: "tyrant" },
+      { id: "dodge95", aliases: ["dodge40", "dodge8"], name: "Cintura di rocce", desc: "Schiva 95 asteroidi in una missione", target: 95, stat: "asteroidsDodged", skin: "meteor" }
+    ];
+
+    const powerDefs = {
+      repair: { name: "Ripara", color: "#79e66f", duration: 0 },
+      shield: { name: "Scudo", color: "#8bd7ff", duration: 8 },
+      rapid: { name: "Rapid", color: "#ffd166", duration: 8 },
+      plasma: { name: "Plasma", color: "#f7a8ff", duration: 8 },
+      magnet: { name: "Magnete", color: "#22d3b6", duration: 10 },
+      slow: { name: "Slow", color: "#ffffff", duration: 6 },
+      multishot: { name: "Multi", color: "#ff3f6e", duration: 5 }
+    };
+
+    const defaultCustom = {
+      engine: "pulse",
+      hull: "guardian",
+      color: "#22d3b6",
+      nose: "sharp",
+      fins: "wide",
+      trail: "neon",
+      skin: "standard"
+    };
+
+    let custom = loadCustom();
+    let questState = loadQuestState();
+    let dpr = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
+    let W = 0;
+    let H = 0;
+    let state = "menu";
+    let lastTime = 0;
+    let raf = 0;
+    let previewTick = 0;
+    let game = null;
+    let keys = new Set();
+    let pointer = { active: false, x: 0, y: 0 };
+
+    function loadCustom() {
+      try {
+        const saved = JSON.parse(localStorage.getItem("spacecombat-custom"));
+        return { ...defaultCustom, ...saved };
+      } catch (err) {
+        return { ...defaultCustom };
+      }
+    }
+
+    function loadQuestState() {
+      try {
+        const saved = JSON.parse(localStorage.getItem("spacecombat-quests"));
+        const state = {
+          completed: {},
+          best: {},
+          unlockedSkins: { ...(saved.unlockedSkins || {}) }
+        };
+        for (const quest of questDefs) {
+          const oldIds = [quest.id, ...(quest.aliases || [])];
+          let best = 0;
+          for (const id of oldIds) {
+            best = Math.max(best, Number(saved.best?.[id] || 0));
+            if (saved.completed?.[id]) state.unlockedSkins[quest.skin] = true;
+          }
+          state.best[quest.id] = Math.min(quest.target, best);
+          state.completed[quest.id] = state.best[quest.id] >= quest.target;
+          if (state.completed[quest.id]) state.unlockedSkins[quest.skin] = true;
+        }
+        saveMigratedQuestState(state);
+        return state;
+      } catch (err) {
+        return { completed: {}, best: {}, unlockedSkins: {} };
+      }
+    }
+
+    function saveCustom() {
+      localStorage.setItem("spacecombat-custom", JSON.stringify(custom));
+    }
+
+    function saveQuestState() {
+      localStorage.setItem("spacecombat-quests", JSON.stringify(questState));
+    }
+
+    function saveMigratedQuestState(state) {
+      localStorage.setItem("spacecombat-quests", JSON.stringify(state));
+    }
+
+    function loadBestScore() {
+      return Number(localStorage.getItem("spacecombat-best") || 0);
+    }
+
+    function saveBestScore(score) {
+      const best = Math.max(loadBestScore(), Math.floor(score || 0));
+      localStorage.setItem("spacecombat-best", String(best));
+      return best;
+    }
+
+    function qs(id) {
+      return document.getElementById(id);
+    }
+
+    function getEngine() {
+      return engines.find(item => item.id === custom.engine) || engines[0];
+    }
+
+    function getHull() {
+      return hulls.find(item => item.id === custom.hull) || hulls[1];
+    }
+
+    function getQuest(id) {
+      return questDefs.find(quest => quest.id === id);
+    }
+
+    function questCompleted(id) {
+      return Boolean(questState.completed[id]);
+    }
+
+    function skinUnlocked(skin) {
+      return !skin.quest || questCompleted(skin.quest) || Boolean(questState.unlockedSkins[skin.id]);
+    }
+
+    function getShipStyle() {
+      const skin = specialSkins.find(item => item.id === custom.skin);
+      if (!skin || !skinUnlocked(skin) || skin.id === "standard") {
+        return { ...custom, skin: "standard", accent: custom.color };
+      }
+      return {
+        ...custom,
+        color: skin.color,
+        nose: skin.nose || custom.nose,
+        fins: skin.fins || custom.fins,
+        trail: skin.trail || custom.trail,
+        skin: skin.id,
+        accent: skin.accent || skin.color,
+        secondary: skin.secondary || "#ffffff"
+      };
+    }
+
+    function resizeCanvas(target, context) {
+      const rect = target.getBoundingClientRect();
+      const width = Math.max(1, Math.floor(rect.width * dpr));
+      const height = Math.max(1, Math.floor(rect.height * dpr));
+      if (target.width !== width || target.height !== height) {
+        target.width = width;
+        target.height = height;
+      }
+      context.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+
+    function resize() {
+      dpr = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
+      const rect = canvas.getBoundingClientRect();
+      W = Math.max(1, Math.floor(rect.width));
+      H = Math.max(1, Math.floor(rect.height));
+      resizeCanvas(canvas, ctx);
+      resizeCanvas(previewCanvas, previewCtx);
+      resizeCanvas(overCanvas, overCtx);
+      if (game && game.player) {
+        game.player.x = clamp(game.player.x, 26, W - 26);
+        game.player.y = clamp(game.player.y, 90, H - 36);
+        game.player.targetX = game.player.x;
+        game.player.targetY = game.player.y;
+      }
+      drawPreview(previewCtx, previewCanvas, performance.now() / 1000);
+      drawPreview(overCtx, overCanvas, performance.now() / 1000);
+    }
+
+    function clamp(value, min, max) {
+      return Math.max(min, Math.min(max, value));
+    }
+
+    function lerp(a, b, t) {
+      return a + (b - a) * t;
+    }
+
+    function rand(min, max) {
+      return min + Math.random() * (max - min);
+    }
+
+    function dist2(a, b) {
+      const dx = a.x - b.x;
+      const dy = a.y - b.y;
+      return dx * dx + dy * dy;
+    }
+
+    function createChoice(item, group, currentId, onClick) {
+      const btn = document.createElement("button");
+      btn.className = "choice" + (item.id === currentId ? " active" : "");
+      btn.type = "button";
+      btn.innerHTML = `<span><strong>${item.name}</strong>${item.desc ? `<span>${item.desc}</span>` : ""}</span>${item.tag ? `<span class="tag">${item.tag}</span>` : ""}`;
+      btn.addEventListener("click", () => onClick(item.id));
+      group.appendChild(btn);
+    }
+
+    function buildMenu() {
+      const currentSkin = specialSkins.find(item => item.id === custom.skin);
+      if (!currentSkin || !skinUnlocked(currentSkin)) custom.skin = "standard";
+      const engineChoices = qs("engineChoices");
+      const hullChoices = qs("hullChoices");
+      const colorChoices = qs("colorChoices");
+      const noseChoices = qs("noseChoices");
+      const finChoices = qs("finChoices");
+      const trailChoices = qs("trailChoices");
+      const skinChoices = qs("skinChoices");
+      const questList = qs("questList");
+      engineChoices.innerHTML = "";
+      hullChoices.innerHTML = "";
+      colorChoices.innerHTML = "";
+      noseChoices.innerHTML = "";
+      finChoices.innerHTML = "";
+      trailChoices.innerHTML = "";
+      skinChoices.innerHTML = "";
+      questList.innerHTML = "";
+
+      engines.forEach(item => createChoice(item, engineChoices, custom.engine, id => {
+        custom.engine = id;
+        menuChanged();
+      }));
+      hulls.forEach(item => createChoice(item, hullChoices, custom.hull, id => {
+        custom.hull = id;
+        menuChanged();
+      }));
+      colors.forEach(color => {
+        const btn = document.createElement("button");
+        btn.className = "swatch" + (custom.color === color ? " active" : "");
+        btn.type = "button";
+        btn.style.background = color;
+        btn.setAttribute("aria-label", `Colore ${color}`);
+        btn.addEventListener("click", () => {
+          custom.color = color;
+          menuChanged();
+        });
+        colorChoices.appendChild(btn);
+      });
+      noses.forEach(item => createChoice(item, noseChoices, custom.nose, id => {
+        custom.nose = id;
+        menuChanged();
+      }));
+      fins.forEach(item => createChoice(item, finChoices, custom.fins, id => {
+        custom.fins = id;
+        menuChanged();
+      }));
+      trails.forEach(item => createChoice(item, trailChoices, custom.trail, id => {
+        custom.trail = id;
+        menuChanged();
+      }));
+      buildSkinChoices(skinChoices);
+      buildQuestList(questList);
+      updateStats();
+    }
+
+    function buildSkinChoices(group) {
+      specialSkins.forEach(skin => {
+        const unlocked = skinUnlocked(skin);
+        const active = custom.skin === skin.id && unlocked;
+        const quest = skin.quest ? getQuest(skin.quest) : null;
+        const btn = document.createElement("button");
+        btn.className = "choice" + (active ? " active" : "") + (unlocked ? "" : " locked");
+        btn.type = "button";
+        btn.disabled = !unlocked;
+        const desc = unlocked ? skin.desc : `Completa: ${quest ? quest.name : "quest"}`;
+        btn.innerHTML = `<span><strong>${skin.name}</strong><span>${desc}</span></span><span class="tag">${unlocked ? skin.tag : "Lock"}</span>`;
+        btn.addEventListener("click", () => {
+          if (!unlocked) return;
+          custom.skin = skin.id;
+          menuChanged();
+        });
+        group.appendChild(btn);
+      });
+    }
+
+    function buildQuestList(group) {
+      questDefs.forEach(quest => {
+        const best = Math.min(quest.target, Math.floor(questState.best[quest.id] || 0));
+        const done = questCompleted(quest.id);
+        const skin = specialSkins.find(item => item.id === quest.skin);
+        const row = document.createElement("div");
+        row.className = "quest-row" + (done ? " done" : "");
+        const pct = done ? 100 : Math.round(best / quest.target * 100);
+        row.innerHTML = `<b>${quest.name}</b><span>${quest.desc} / Skin: ${skin ? skin.name : "speciale"}</span><div class="quest-progress"><i style="width:${pct}%"></i></div><span>${done ? "Completata" : `${best}/${quest.target}`}</span>`;
+        group.appendChild(row);
+      });
+    }
+
+    function menuChanged() {
+      saveCustom();
+      buildMenu();
+      drawPreview(previewCtx, previewCanvas, performance.now() / 1000);
+      drawPreview(overCtx, overCanvas, performance.now() / 1000);
+    }
+
+    function updateStats() {
+      const engine = getEngine();
+      const hull = getHull();
+      const speed = Math.round(62 * engine.speed * hull.speed);
+      const armor = Math.round((hull.hp * (1 / hull.armor)) / 2.15);
+      const fire = Math.round(64 * engine.fire);
+      const agility = Math.round(58 * engine.agility * (1.12 / hull.size));
+
+      qs("statSpeed").textContent = speed;
+      qs("statArmor").textContent = armor;
+      qs("statFire").textContent = fire;
+      qs("statAgility").textContent = agility;
+      qs("statRecord").textContent = loadBestScore();
+      qs("barSpeed").style.width = clamp(speed, 20, 100) + "%";
+      qs("barArmor").style.width = clamp(armor, 20, 100) + "%";
+      qs("barFire").style.width = clamp(fire, 20, 100) + "%";
+      qs("barAgility").style.width = clamp(agility, 20, 100) + "%";
+      qs("barRecord").style.width = clamp(loadBestScore() / 40, 8, 100) + "%";
+    }
+
+    function setupTabs() {
+      document.querySelectorAll(".tab-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+          document.querySelectorAll(".tab-btn").forEach(item => item.classList.remove("active"));
+          btn.classList.add("active");
+          qs("techPanel").classList.toggle("active", btn.dataset.tab === "tech");
+          qs("stylePanel").classList.toggle("active", btn.dataset.tab === "style");
+        });
+      });
+    }
+
+    function startGame() {
+      const engine = getEngine();
+      const hull = getHull();
+      const maxHp = hull.hp;
+      game = {
+        time: 0,
+        score: 0,
+        kills: 0,
+        bosses: 0,
+        level: 1,
+        spawnTimer: 0,
+        spawnEvery: 0.34,
+        asteroidTimer: 1.7,
+        nextBossAt: 52,
+        slowTimer: 0,
+        flash: 0,
+        shake: 0,
+        paused: false,
+        stars: makeStars(),
+        particles: [],
+        projectiles: [],
+        enemyBullets: [],
+        enemies: [],
+        asteroids: [],
+        pickups: [],
+        boss: null,
+        messageTimer: 0,
+        asteroidsDodged: 0,
+        lastAlienTypes: [],
+        player: {
+          x: W / 2,
+          y: H * 0.78,
+          targetX: W / 2,
+          targetY: H * 0.78,
+          radius: 18 * hull.size,
+          hp: maxHp,
+          maxHp,
+          speed: 470 * engine.speed * hull.speed,
+          fireEvery: 0.135 / engine.fire,
+          cooldown: 0,
+          damage: 28 * engine.fire,
+          armor: hull.armor,
+          size: hull.size,
+          invuln: 1.1,
+          shield: 0,
+          rapid: 0,
+          plasma: 0,
+          magnet: 0,
+          multishot: 0,
+          hitPulse: 0
+        }
+      };
+      state = "playing";
+      menuScreen.classList.add("hidden");
+      gameOverScreen.classList.add("hidden");
+      hud.classList.remove("hidden");
+      bottomControls.classList.remove("hidden");
+      bossBar.classList.add("hidden");
+      showToast("Missione avviata");
+      lastTime = performance.now();
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(loop);
+    }
+
+    function makeStars() {
+      const stars = [];
+      const count = Math.round((W * H) / 5200);
+      for (let i = 0; i < count; i++) {
+        stars.push({
+          x: Math.random() * W,
+          y: Math.random() * H,
+          r: rand(0.6, 2.1),
+          s: rand(18, 85),
+          c: Math.random() > 0.82 ? "#ffd166" : (Math.random() > 0.5 ? "#ffffff" : "#8bd7ff")
+        });
+      }
+      return stars;
+    }
+
+    function loop(now) {
+      const dt = Math.min(0.033, (now - lastTime) / 1000 || 0);
+      lastTime = now;
+      if (state === "playing") {
+        update(dt);
+        draw();
+        raf = requestAnimationFrame(loop);
+      }
+    }
+
+    function update(dt) {
+      const player = game.player;
+      game.time += dt;
+      game.level = 1 + Math.floor(game.time / 20);
+      game.slowTimer = Math.max(0, game.slowTimer - dt);
+      game.flash = Math.max(0, game.flash - dt);
+      game.shake = Math.max(0, game.shake - dt);
+
+      player.cooldown -= dt;
+      player.invuln = Math.max(0, player.invuln - dt);
+      player.shield = Math.max(0, player.shield - dt);
+      player.rapid = Math.max(0, player.rapid - dt);
+      player.plasma = Math.max(0, player.plasma - dt);
+      player.multishot = Math.max(0, player.multishot - dt);
+      player.magnet = Math.max(0, player.magnet - dt);
+      player.hitPulse = Math.max(0, player.hitPulse - dt);
+
+      handleMovement(dt);
+      autoFire();
+      updateStars(dt);
+      updateSpawning(dt);
+      updateBoss(dt);
+      updateAsteroids(dt);
+      updateProjectiles(dt);
+      updateEnemies(dt);
+      updatePickups(dt);
+      updateParticles(dt);
+      updateQuestProgress();
+      updateHud();
+    }
+
+    function handleMovement(dt) {
+      const player = game.player;
+      const keyboardSpeed = player.speed * dt;
+      let kx = 0;
+      let ky = 0;
+      if (keys.has("ArrowLeft") || keys.has("a")) kx -= 1;
+      if (keys.has("ArrowRight") || keys.has("d")) kx += 1;
+      if (keys.has("ArrowUp") || keys.has("w")) ky -= 1;
+      if (keys.has("ArrowDown") || keys.has("s")) ky += 1;
+      if (kx || ky) {
+        const len = Math.hypot(kx, ky) || 1;
+        player.targetX = player.x + (kx / len) * keyboardSpeed * 2.2;
+        player.targetY = player.y + (ky / len) * keyboardSpeed * 2.2;
+      }
+      if (pointer.active) {
+        player.targetX = pointer.x;
+        player.targetY = pointer.y - 38;
+      }
+      player.targetX = clamp(player.targetX, 24, W - 24);
+      player.targetY = clamp(player.targetY, 92, H - 28);
+      const dx = player.targetX - player.x;
+      const dy = player.targetY - player.y;
+      const distance = Math.hypot(dx, dy);
+      if (distance > 0.5) {
+        const step = Math.min(distance, player.speed * dt);
+        player.x += (dx / distance) * step;
+        player.y += (dy / distance) * step;
+      }
+    }
+
+    function autoFire() {
+      const player = game.player;
+      const rateBoost = player.rapid > 0 ? 0.48 : 1;
+      if (player.cooldown > 0) return;
+      player.cooldown = player.fireEvery * rateBoost;
+      const plasma = player.plasma > 0;
+      const damage = player.damage * (plasma ? 1.55 : 1);
+      spawnShot(player.x, player.y - 29, 0, damage, plasma, 1);
+      if (player.multishot > 0) {
+        const wide = plasma ? 48 : 36;
+        spawnShot(player.x - 10, player.y - 21, -wide, damage * 0.34, plasma, 0.42);
+        spawnShot(player.x + 10, player.y - 21, wide, damage * 0.34, plasma, 0.42);
+      }
+    }
+
+    function spawnShot(x, y, vx, damage, pierce = false, bossScale = 1) {
+      const shipStyle = getShipStyle();
+      game.projectiles.push({
+        x,
+        y,
+        vx,
+        vy: -620,
+        radius: pierce ? 5 : 4,
+        damage,
+        bossScale,
+        pierce,
+        color: pierce ? (shipStyle.accent || "#f7a8ff") : shipStyle.color,
+        life: 1.5
+      });
+    }
+
+    function questValue(quest) {
+      if (!game) return 0;
+      if (quest.stat === "time") return Math.floor(game.time);
+      return Math.floor(game[quest.stat] || 0);
+    }
+
+    function updateQuestProgress() {
+      if (!game) return;
+      let changed = false;
+      for (const quest of questDefs) {
+        const value = questValue(quest);
+        if (value > (questState.best[quest.id] || 0)) {
+          questState.best[quest.id] = Math.min(quest.target, value);
+          changed = true;
+        }
+        if (!questCompleted(quest.id) && value >= quest.target) {
+          questState.completed[quest.id] = true;
+          questState.unlockedSkins[quest.skin] = true;
+          changed = true;
+          const skin = specialSkins.find(item => item.id === quest.skin);
+          showToast(`Quest completata: ${quest.name}${skin ? " / skin sbloccata" : ""}`);
+        }
+      }
+      if (changed) saveQuestState();
+    }
+
+    function updateStars(dt) {
+      for (const star of game.stars) {
+        star.y += star.s * dt * (game.slowTimer > 0 ? 0.7 : 1);
+        if (star.y > H + 4) {
+          star.y = -4;
+          star.x = Math.random() * W;
+        }
+      }
+    }
+
+    function updateSpawning(dt) {
+      if (game.time >= game.nextBossAt && !game.boss) {
+        spawnBoss();
+        game.nextBossAt += 64 + game.bosses * 7;
+      }
+      const maxEnemies = Math.min(20, 11 + Math.floor(game.time / 20) + game.bosses * 2);
+      if (game.enemies.length >= maxEnemies) return;
+      if (game.boss && game.enemies.length > 7) return;
+      game.spawnEvery = Math.max(0.23, 0.34 - game.time * 0.00058);
+      game.spawnTimer -= dt;
+      if (game.spawnTimer <= 0) {
+        game.spawnTimer = game.spawnEvery;
+        const count = Math.random() < Math.min(0.52, Math.max(0, game.time - 6) / 150) ? 2 : 1;
+        for (let i = 0; i < count; i++) spawnEnemy();
+      }
+    }
+
+    function pickAlienType() {
+      const unlocked = alienTypes.filter(type => game.time >= type.unlock);
+      if (!unlocked.length) return alienTypes[0];
+      const total = unlocked.reduce((sum, type) => sum + alienWeight(type), 0);
+      let roll = Math.random() * total;
+      for (const type of unlocked) {
+        roll -= alienWeight(type);
+        if (roll <= 0) return type;
+      }
+      return unlocked[unlocked.length - 1];
+    }
+
+    function alienWeight(type) {
+      let weight = type.weight || 1;
+      if (type.id === "sniper" || type.id === "swarm") {
+        weight += 0.35 + Math.min(0.65, game.time / 180);
+      }
+      const repeats = game.lastAlienTypes.filter(id => id === type.id).length;
+      if (repeats === 1) weight *= 0.42;
+      if (repeats >= 2) weight *= 0.12;
+      return weight;
+    }
+
+    function spawnEnemy(forcedType, x, y, scale = 1) {
+      const base = forcedType || pickAlienType();
+      const diff = 1.22 + Math.pow(game.time / 60, 1.22) * 0.44 + game.bosses * 0.28;
+      const speedDiff = 1.15 + Math.min(0.9, game.time * 0.0034 + game.bosses * 0.07);
+      const damageDiff = 1.12 + Math.min(1.15, game.time * 0.005 + game.bosses * 0.08);
+      const sideDrift = rand(-34, 34);
+      const enemy = {
+        id: base.id,
+        name: base.name,
+        x: x ?? rand(26, W - 26),
+        y: y ?? rand(-88, -24),
+        startX: 0,
+        t: rand(0, 10),
+        radius: base.radius * scale,
+        hp: base.hp * diff * scale,
+        maxHp: base.hp * diff * scale,
+        speed: base.speed * speedDiff * rand(0.92, 1.12),
+        damage: base.damage * damageDiff,
+        score: Math.round(base.score * diff),
+        color: base.color,
+        pattern: base.pattern,
+        ability: base.ability,
+        cooldown: rand(1.0, 2.4),
+        charge: 0,
+        ram: 0,
+        burst: 0,
+        drift: sideDrift,
+        shield: base.ability === "aura" ? 0.2 : 0,
+        splitScale: scale
+      };
+      enemy.startX = enemy.x;
+      game.enemies.push(enemy);
+      if (!forcedType) {
+        game.lastAlienTypes.push(enemy.id);
+        if (game.lastAlienTypes.length > 5) game.lastAlienTypes.shift();
+      }
+    }
+
+    function spawnBoss() {
+      const bossIndex = game.bosses + 1;
+      const type = bossTypes[(bossIndex - 1) % bossTypes.length];
+      const boss = {
+        id: "boss",
+        type: type.id,
+        ability: type.ability,
+        name: type.name,
+        x: W / 2,
+        y: -110,
+        targetY: 116,
+        radius: Math.min(74, 52 + bossIndex * 4),
+        hp: 1250 * Math.pow(1.82, bossIndex - 1) * (1 + game.time * 0.009),
+        maxHp: 0,
+        phase: 0,
+        t: 0,
+        cooldown: type.id === "mantis" ? 1.65 : 1.18,
+        summon: type.id === "carrier" ? 4.8 : 6.8,
+        special: type.id === "warden" ? 1.1 : 2.4,
+        dash: 0,
+        dashVX: 0,
+        spin: rand(0, Math.PI * 2),
+        color: type.color,
+        index: bossIndex
+      };
+      boss.maxHp = boss.hp;
+      game.boss = boss;
+      bossBar.classList.remove("hidden");
+      showToast("Boss in arrivo: " + boss.name);
+    }
+
+    function updateBoss(dt) {
+      const boss = game.boss;
+      if (!boss) return;
+      const slow = game.slowTimer > 0 ? 0.55 : 1;
+      boss.t += dt * slow;
+      boss.y = lerp(boss.y, boss.targetY, Math.min(1, dt * 1.8));
+      if (boss.type === "mantis" && boss.dash > 0) {
+        boss.dash -= dt * slow;
+        boss.x += boss.dashVX * dt * slow;
+        if (boss.x < boss.radius || boss.x > W - boss.radius) boss.dashVX *= -0.8;
+        boss.x = clamp(boss.x, boss.radius, W - boss.radius);
+      } else {
+        const travel = boss.type === "warden" ? 0.22 : boss.type === "carrier" ? 0.18 : 0.32;
+        const wave = boss.type === "tyrant" ? 1.25 : boss.type === "mantis" ? 1.75 : 0.85;
+        boss.x = W / 2 + Math.sin(boss.t * wave) * Math.min(W * travel, 116 + boss.index * 12);
+      }
+      boss.cooldown -= dt * slow;
+      boss.summon -= dt * slow;
+      boss.special -= dt * slow;
+      if (boss.cooldown <= 0) {
+        fireBossPattern(boss);
+      }
+      if (boss.summon <= 0) {
+        bossSummon(boss);
+      }
+      if (boss.special <= 0) {
+        bossSpecial(boss);
+      }
+      if (boss.hp <= 0) {
+        killBoss();
+      }
+    }
+
+    function fireBossPattern(boss) {
+      if (boss.type === "tyrant") {
+        boss.cooldown = Math.max(0.54, 1.12 - game.time * 0.0022);
+        const shots = 5 + Math.min(6, boss.index);
+        for (let i = 0; i < shots; i++) {
+          const angle = Math.PI / 2 + (i - (shots - 1) / 2) * 0.18 + Math.sin(boss.t) * 0.1;
+          spawnEnemyBullet(boss.x, boss.y + boss.radius * 0.5, Math.cos(angle) * 176, Math.sin(angle) * 176, 13 + boss.index * 2, boss.color, 6);
+        }
+      } else if (boss.type === "mantis") {
+        boss.cooldown = Math.max(0.86, 1.62 - game.time * 0.002);
+        const player = game.player;
+        const base = Math.atan2(player.y - boss.y, player.x - boss.x);
+        for (const offset of [-0.18, 0, 0.18]) {
+          const angle = base + offset;
+          spawnEnemyBullet(boss.x, boss.y + boss.radius * 0.2, Math.cos(angle) * 225, Math.sin(angle) * 225, 15 + boss.index * 2, "#a66cff", 4.5);
+        }
+      } else if (boss.type === "carrier") {
+        boss.cooldown = Math.max(0.72, 1.34 - game.time * 0.0021);
+        for (const offset of [-0.35, 0.35]) {
+          const angle = Math.PI / 2 + offset + Math.sin(boss.t) * 0.12;
+          spawnEnemyBullet(boss.x, boss.y + boss.radius * 0.56, Math.cos(angle) * 150, Math.sin(angle) * 150, 13 + boss.index * 2, "#ff8a2a", 7);
+        }
+      } else {
+        boss.cooldown = Math.max(0.64, 1.08 - game.time * 0.0023);
+        const shots = 6;
+        boss.spin += 0.42;
+        for (let i = 0; i < shots; i++) {
+          const angle = boss.spin + i * Math.PI * 2 / shots;
+          const vx = Math.cos(angle) * 138;
+          const vy = Math.sin(angle) * 138 + 92;
+          spawnEnemyBullet(boss.x, boss.y + boss.radius * 0.2, vx, vy, 12 + boss.index * 2, "#ffd166", 5.5);
+        }
+      }
+    }
+
+    function bossSummon(boss) {
+      if (boss.type === "carrier") {
+        boss.summon = Math.max(3.3, 5.2 - boss.index * 0.16);
+        spawnAsteroid(clamp(boss.x + rand(-95, 95), 30, W - 30), boss.y + boss.radius * 0.5, 1.12);
+        if (Math.random() < 0.42) {
+          const type = alienTypes[Math.floor(rand(0, Math.min(alienTypes.length, 4 + boss.index)))];
+          spawnEnemy(type, clamp(boss.x + rand(-88, 88), 24, W - 24), boss.y + boss.radius, 0.78);
+        }
+      } else {
+        boss.summon = Math.max(4.0, 6.8 - boss.index * 0.24);
+        const type = alienTypes[Math.floor(rand(0, Math.min(alienTypes.length, 3 + boss.index)))];
+        spawnEnemy(type, clamp(boss.x + rand(-88, 88), 24, W - 24), boss.y + boss.radius, 0.82);
+      }
+    }
+
+    function bossSpecial(boss) {
+      if (boss.type === "mantis") {
+        boss.special = rand(2.2, 3.2);
+        boss.dash = 0.55;
+        boss.dashVX = (game.player.x > boss.x ? 1 : -1) * rand(300, 420);
+      } else if (boss.type === "carrier") {
+        boss.special = rand(2.8, 3.8);
+        spawnAsteroid(rand(35, W - 35), -40, 1.28);
+      } else if (boss.type === "warden") {
+        boss.special = 1.05;
+        const angle = Math.atan2(game.player.y - boss.y, game.player.x - boss.x);
+        spawnEnemyBullet(boss.x, boss.y + boss.radius * 0.34, Math.cos(angle) * 245, Math.sin(angle) * 245, 18 + boss.index * 2, "#ffd166", 7);
+      } else {
+        boss.special = rand(2.4, 3.4);
+        const shots = 9;
+        for (let i = 0; i < shots; i++) {
+          const angle = Math.PI / 2 + (i - (shots - 1) / 2) * 0.13;
+          spawnEnemyBullet(boss.x, boss.y + boss.radius * 0.45, Math.cos(angle) * 154, Math.sin(angle) * 154, 11 + boss.index * 2, "#ff405d", 4.5);
+        }
+      }
+    }
+
+    function spawnAsteroid(x, y, scale = 1) {
+      const radius = rand(18, 34) * scale;
+      const speedBoost = 1 + Math.min(0.55, game.time * 0.002 + game.bosses * 0.06);
+      game.asteroids.push({
+        x: x ?? rand(24, W - 24),
+        y: y ?? -radius - 12,
+        vx: rand(-28, 28) * speedBoost,
+        vy: rand(112, 178) * speedBoost,
+        radius,
+        rot: rand(0, Math.PI * 2),
+        spin: rand(-1.8, 1.8),
+        damage: 18 + radius * 0.45 + game.bosses * 3,
+        color: Math.random() > 0.5 ? "#8d7b68" : "#6f6257",
+        seed: rand(0, 100)
+      });
+    }
+
+    function updateAsteroids(dt) {
+      const slow = game.slowTimer > 0 ? 0.55 : 1;
+      if (game.time > 6) {
+        game.asteroidTimer -= dt;
+        if (game.asteroidTimer <= 0) {
+          const interval = Math.max(0.95, 2.35 - game.time * 0.011 - game.bosses * 0.22);
+          game.asteroidTimer = interval * rand(0.76, 1.18);
+          spawnAsteroid();
+        }
+      }
+
+      for (let i = game.asteroids.length - 1; i >= 0; i--) {
+        const asteroid = game.asteroids[i];
+        asteroid.x += asteroid.vx * dt * slow;
+        asteroid.y += asteroid.vy * dt * slow;
+        asteroid.rot += asteroid.spin * dt * slow;
+        if (circleHit(asteroid, game.player)) {
+          damagePlayer(asteroid.damage);
+          spawnExplosion(asteroid.x, asteroid.y, "#b8a38b", 18);
+          game.asteroids.splice(i, 1);
+        } else if (asteroid.y > H + asteroid.radius + 40 || asteroid.x < -80 || asteroid.x > W + 80) {
+          if (asteroid.y > H + asteroid.radius) game.asteroidsDodged += 1;
+          game.asteroids.splice(i, 1);
+        }
+      }
+    }
+
+    function spawnEnemyBullet(x, y, vx, vy, damage, color, radius = 5) {
+      game.enemyBullets.push({ x, y, vx, vy, damage, color, radius, life: 5 });
+    }
+
+    function updateProjectiles(dt) {
+      const list = game.projectiles;
+      for (let i = list.length - 1; i >= 0; i--) {
+        const p = list[i];
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+        p.life -= dt;
+        let hit = false;
+
+        if (game.boss && circleHit(p, game.boss)) {
+          game.boss.hp -= p.damage * (p.bossScale || 1);
+          hit = true;
+          spawnSpark(p.x, p.y, game.boss.color, 4);
+        }
+
+        for (let j = game.enemies.length - 1; j >= 0; j--) {
+          const enemy = game.enemies[j];
+          if (circleHit(p, enemy)) {
+            const auraBlock = guardianAuraOn(enemy) ? 0.18 : 0;
+            enemy.hp -= p.damage * (1 - enemy.shield - auraBlock);
+            hit = true;
+            spawnSpark(p.x, p.y, enemy.color, 3);
+            if (enemy.hp <= 0) killEnemy(j, enemy);
+            if (!p.pierce) break;
+          }
+        }
+
+        if (p.life <= 0 || p.y < -20 || p.x < -30 || p.x > W + 30 || (hit && !p.pierce)) {
+          list.splice(i, 1);
+        }
+      }
+
+      for (let i = game.enemyBullets.length - 1; i >= 0; i--) {
+        const b = game.enemyBullets[i];
+        const slow = game.slowTimer > 0 ? 0.55 : 1;
+        b.x += b.vx * dt * slow;
+        b.y += b.vy * dt * slow;
+        b.life -= dt;
+        if (circleHit(b, game.player)) {
+          damagePlayer(b.damage);
+          game.enemyBullets.splice(i, 1);
+        } else if (b.life <= 0 || b.y > H + 30 || b.x < -40 || b.x > W + 40) {
+          game.enemyBullets.splice(i, 1);
+        }
+      }
+    }
+
+    function circleHit(a, b) {
+      const radius = (a.radius || 0) + (b.radius || 0);
+      return dist2(a, b) <= radius * radius;
+    }
+
+    function guardianAuraOn(enemy) {
+      if (enemy.id === "shield") return false;
+      return game.enemies.some(other => other.id === "shield" && other !== enemy && dist2(other, enemy) < 120 * 120);
+    }
+
+    function updateEnemies(dt) {
+      const player = game.player;
+      const slow = game.slowTimer > 0 ? 0.55 : 1;
+      for (let i = game.enemies.length - 1; i >= 0; i--) {
+        const e = game.enemies[i];
+        e.t += dt * slow;
+        const speed = e.speed * dt * slow;
+        if (e.pattern === "drone") {
+          e.y += speed;
+          e.x = e.startX + Math.sin(e.t * 2.1) * 24 + Math.sin(e.t * 5.2) * 7;
+        } else if (e.pattern === "zig") {
+          e.y += speed * 0.96;
+          e.x = e.startX + Math.sin(e.t * 4.4) * 48 + Math.sign(Math.sin(e.t * 1.8)) * 12;
+        } else if (e.pattern === "brute") {
+          e.cooldown -= dt * slow;
+          e.ram = Math.max(0, e.ram - dt * slow);
+          if (e.cooldown <= 0 && e.y < player.y - 110) {
+            e.cooldown = rand(2.2, 3.4);
+            e.ram = 0.5;
+            e.drift = clamp((player.x - e.x) * 0.8, -150, 150);
+          }
+          e.y += speed * (e.ram > 0 ? 1.95 : 0.74);
+          e.x += (e.ram > 0 ? e.drift : Math.sin(e.t * 1.2) * 22) * dt;
+        } else if (e.pattern === "spore") {
+          e.y += speed * 0.92;
+          e.x += Math.sin(e.t * 2.4) * dt * 46 + e.drift * dt * 0.6;
+        } else if (e.pattern === "sniper") {
+          e.y += e.y < 118 ? speed : speed * 0.18;
+          e.x += Math.sin(e.t * 1.7) * dt * 70;
+          if (e.charge > 0) {
+            e.charge -= dt * slow;
+            if (e.charge <= 0) {
+              const angle = Math.atan2(player.y - e.y, player.x - e.x);
+              spawnEnemyBullet(e.x, e.y, Math.cos(angle) * 205, Math.sin(angle) * 205, e.damage, e.color, 4.5);
+              e.cooldown = rand(2.1, 3.1);
+            }
+          } else {
+            e.cooldown -= dt * slow;
+            if (e.cooldown <= 0) e.charge = 0.62;
+          }
+        } else if (e.pattern === "guardian") {
+          e.y += speed * 0.66;
+          e.x += Math.sin(e.t * 1.4) * dt * 42 + e.drift * dt * 0.25;
+          e.cooldown -= dt * slow;
+          if (e.cooldown <= 0) {
+            e.cooldown = rand(3.2, 4.6);
+            for (const ally of game.enemies) {
+              if (ally !== e && dist2(ally, e) < 112 * 112) {
+                ally.hp = Math.min(ally.maxHp, ally.hp + ally.maxHp * 0.05);
+                spawnSpark(ally.x, ally.y, e.color, 2);
+              }
+            }
+          }
+        } else if (e.pattern === "bomber") {
+          e.y += speed * 0.86;
+          e.x += Math.sin(e.t * 3) * dt * 54;
+          e.cooldown -= dt * slow;
+          if (e.cooldown <= 0) {
+            e.cooldown = rand(1.8, 2.7);
+            spawnEnemyBullet(e.x, e.y + 12, rand(-22, 22), 128, e.damage * 0.78, "#ff8a2a", 7);
+          }
+        } else if (e.pattern === "swarm") {
+          const angle = Math.atan2(player.y - e.y, player.x - e.x);
+          e.x += Math.cos(angle) * speed * 0.52 + Math.sin(e.t * 8) * dt * 46;
+          e.y += speed * 0.82;
+        } else {
+          e.y += speed;
+          e.x += Math.sin(e.t * 1.4) * dt * e.drift;
+        }
+
+        e.x = clamp(e.x, -26, W + 26);
+        if (circleHit(e, player)) {
+          damagePlayer(e.damage);
+          spawnExplosion(e.x, e.y, e.color, 11);
+          game.enemies.splice(i, 1);
+        } else if (e.y > H + 54) {
+          game.enemies.splice(i, 1);
+        }
+      }
+    }
+
+    function killEnemy(index, enemy) {
+      game.score += enemy.score;
+      game.kills += 1;
+      spawnExplosion(enemy.x, enemy.y, enemy.color, 12);
+      if (enemy.id === "splitter" && enemy.splitScale > 0.62) {
+        const swarm = alienTypes.find(type => type.id === "swarm") || alienTypes[0];
+        spawnEnemy(swarm, enemy.x - 14, enemy.y, 0.68);
+        spawnEnemy(swarm, enemy.x + 14, enemy.y, 0.68);
+      }
+      if (Math.random() < 0.13) spawnPowerup(enemy.x, enemy.y);
+      game.enemies.splice(index, 1);
+    }
+
+    function killBoss() {
+      const boss = game.boss;
+      game.score += Math.round(520 * (1 + game.bosses * 0.45));
+      game.bosses += 1;
+      game.kills += 1;
+      spawnExplosion(boss.x, boss.y, boss.color, 58);
+      for (let i = 0; i < 4; i++) spawnPowerup(boss.x + rand(-50, 50), boss.y + rand(-12, 50), true);
+      game.boss = null;
+      bossBar.classList.add("hidden");
+      game.flash = 0.28;
+      game.shake = 0.32;
+      showToast("Boss distrutto");
+    }
+
+    function spawnPowerup(x, y, premium = false) {
+      const pool = premium
+        ? ["repair", "shield", "rapid", "plasma", "multishot", "magnet", "slow"]
+        : ["repair", "shield", "rapid", "plasma", "magnet", "slow", "multishot"];
+      const type = pool[Math.floor(Math.random() * pool.length)];
+      const def = powerDefs[type];
+      game.pickups.push({ type, x, y, vy: premium ? 70 : 92, radius: 14, color: def.color, life: 9 });
+    }
+
+    function updatePickups(dt) {
+      const player = game.player;
+      for (let i = game.pickups.length - 1; i >= 0; i--) {
+        const p = game.pickups[i];
+        p.life -= dt;
+        if (player.magnet > 0) {
+          const angle = Math.atan2(player.y - p.y, player.x - p.x);
+          const pull = clamp(280 - Math.hypot(player.x - p.x, player.y - p.y), 0, 280);
+          p.x += Math.cos(angle) * pull * dt * 2.2;
+          p.y += Math.sin(angle) * pull * dt * 2.2;
+        }
+        p.y += p.vy * dt;
+        if (circleHit(p, player)) {
+          applyPowerup(p.type);
+          game.pickups.splice(i, 1);
+        } else if (p.life <= 0 || p.y > H + 30) {
+          game.pickups.splice(i, 1);
+        }
+      }
+    }
+
+    function applyPowerup(type) {
+      const player = game.player;
+      const def = powerDefs[type];
+      if (type === "repair") {
+        player.hp = Math.min(player.maxHp, player.hp + player.maxHp * 0.28);
+      } else if (type === "slow") {
+        game.slowTimer = Math.max(game.slowTimer, def.duration);
+      } else {
+        player[type] = Math.max(player[type] || 0, def.duration);
+      }
+      showToast(def.name);
+    }
+
+    function damagePlayer(amount) {
+      const player = game.player;
+      if (player.invuln > 0) return;
+      if (player.shield > 0) {
+        player.shield = Math.max(0, player.shield - 1.4);
+        spawnSpark(player.x, player.y, "#8bd7ff", 8);
+        return;
+      }
+      player.hp -= amount * player.armor;
+      player.invuln = 0.45;
+      player.hitPulse = 0.25;
+      game.shake = 0.16;
+      spawnSpark(player.x, player.y, "#ffffff", 12);
+      if (player.hp <= 0) {
+        player.hp = 0;
+        endGame();
+      }
+    }
+
+    function endGame() {
+      state = "over";
+      cancelAnimationFrame(raf);
+      spawnExplosion(game.player.x, game.player.y, getShipStyle().color, 44);
+      updateQuestProgress();
+      saveQuestState();
+      draw();
+      hud.classList.add("hidden");
+      bottomControls.classList.add("hidden");
+      bossBar.classList.add("hidden");
+      const best = saveBestScore(game.score);
+      qs("finalScore").textContent = game.score;
+      qs("finalTime").textContent = Math.floor(game.time) + "s";
+      qs("finalBosses").textContent = game.bosses;
+      qs("bestScore").textContent = best;
+      qs("finalKills").textContent = game.kills;
+      qs("finalLevel").textContent = game.level;
+      gameOverScreen.classList.remove("hidden");
+      drawPreview(overCtx, overCanvas, performance.now() / 1000);
+    }
+
+    function updateParticles(dt) {
+      for (let i = game.particles.length - 1; i >= 0; i--) {
+        const p = game.particles[i];
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+        p.vx *= 0.985;
+        p.vy *= 0.985;
+        p.life -= dt;
+        if (p.life <= 0) game.particles.splice(i, 1);
+      }
+    }
+
+    function spawnSpark(x, y, color, count) {
+      for (let i = 0; i < count; i++) {
+        game.particles.push({
+          x,
+          y,
+          vx: rand(-120, 120),
+          vy: rand(-120, 120),
+          r: rand(1.2, 3.2),
+          color,
+          life: rand(0.16, 0.42)
+        });
+      }
+    }
+
+    function spawnExplosion(x, y, color, count) {
+      for (let i = 0; i < count; i++) {
+        const angle = rand(0, Math.PI * 2);
+        const speed = rand(45, 270);
+        game.particles.push({
+          x,
+          y,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed,
+          r: rand(1.5, 5.2),
+          color: Math.random() > 0.3 ? color : "#ffffff",
+          life: rand(0.25, 0.86)
+        });
+      }
+    }
+
+    function updateHud() {
+      const player = game.player;
+      scoreText.textContent = game.score;
+      timeText.textContent = Math.floor(game.time) + "s";
+      levelText.textContent = game.level;
+      const hpPct = player.maxHp ? clamp(player.hp / player.maxHp, 0, 1) : 0;
+      hpText.textContent = Math.round(hpPct * 100) + "%";
+      hpFill.style.transform = `scaleX(${hpPct})`;
+      const boss = game.boss;
+      if (boss) {
+        bossName.textContent = boss.name;
+        const bossPct = clamp(boss.hp / boss.maxHp, 0, 1);
+        bossHpText.textContent = Math.round(bossPct * 100) + "%";
+        bossFill.style.width = Math.round(bossPct * 100) + "%";
+      }
+      const active = [];
+      if (player.shield > 0) active.push(["Scudo", player.shield]);
+      if (player.rapid > 0) active.push(["Rapid", player.rapid]);
+      if (player.plasma > 0) active.push(["Plasma", player.plasma]);
+      if (player.multishot > 0) active.push(["Multi", player.multishot]);
+      if (player.magnet > 0) active.push(["Magnete", player.magnet]);
+      if (game.slowTimer > 0) active.push(["Slow", game.slowTimer]);
+      powerList.innerHTML = active.map(([name, time]) => `<span class="power-pill">${name} ${Math.ceil(time)}s</span>`).join("");
+    }
+
+    function draw() {
+      ctx.save();
+      ctx.clearRect(0, 0, W, H);
+      if (game.shake > 0) {
+        ctx.translate(rand(-6, 6) * game.shake * 4, rand(-6, 6) * game.shake * 4);
+      }
+      drawSpace(ctx, W, H, game.stars);
+      for (const asteroid of game.asteroids) drawAsteroid(ctx, asteroid);
+      for (const p of game.pickups) drawPickup(ctx, p);
+      for (const shot of game.projectiles) drawShot(ctx, shot);
+      for (const bullet of game.enemyBullets) drawEnemyBullet(ctx, bullet);
+      for (const enemy of game.enemies) drawEnemy(ctx, enemy);
+      if (game.boss) drawBoss(ctx, game.boss);
+      drawShip(ctx, game.player.x, game.player.y, game.player.size, game.time, getShipStyle(), game.player);
+      for (const p of game.particles) drawParticle(ctx, p);
+      ctx.restore();
+
+      if (game.flash > 0) {
+        ctx.save();
+        ctx.globalAlpha = game.flash * 1.6;
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, W, H);
+        ctx.restore();
+      }
+    }
+
+    function drawSpace(context, width, height, stars) {
+      const gradient = context.createLinearGradient(0, 0, 0, height);
+      gradient.addColorStop(0, "#060812");
+      gradient.addColorStop(0.52, "#05070b");
+      gradient.addColorStop(1, "#0b080d");
+      context.fillStyle = gradient;
+      context.fillRect(0, 0, width, height);
+      context.save();
+      for (const star of stars) {
+        context.globalAlpha = clamp(star.r / 2.1, 0.28, 0.86);
+        context.fillStyle = star.c;
+        context.beginPath();
+        context.arc(star.x, star.y, star.r, 0, Math.PI * 2);
+        context.fill();
+      }
+      context.restore();
+    }
+
+    function drawAsteroid(context, asteroid) {
+      const r = asteroid.radius;
+      context.save();
+      context.translate(asteroid.x, asteroid.y);
+      context.rotate(asteroid.rot);
+
+      const glow = context.createRadialGradient(0, 0, r * 0.1, 0, 0, r * 1.45);
+      glow.addColorStop(0, "rgba(255,209,166,0.16)");
+      glow.addColorStop(0.62, "rgba(255,209,166,0.05)");
+      glow.addColorStop(1, "rgba(255,209,166,0)");
+      context.fillStyle = glow;
+      context.beginPath();
+      context.arc(0, 0, r * 1.45, 0, Math.PI * 2);
+      context.fill();
+
+      const rock = context.createLinearGradient(-r, -r, r, r);
+      rock.addColorStop(0, shade(asteroid.color, 30));
+      rock.addColorStop(0.52, asteroid.color);
+      rock.addColorStop(1, shade(asteroid.color, -42));
+      context.fillStyle = rock;
+      context.strokeStyle = "rgba(255,255,255,0.28)";
+      context.lineWidth = 2;
+      context.beginPath();
+      const points = 12;
+      for (let i = 0; i < points; i++) {
+        const angle = i * Math.PI * 2 / points;
+        const wobble = 0.78 + Math.abs(Math.sin(asteroid.seed + i * 1.87)) * 0.35;
+        const px = Math.cos(angle) * r * wobble;
+        const py = Math.sin(angle) * r * wobble;
+        if (i === 0) context.moveTo(px, py);
+        else context.lineTo(px, py);
+      }
+      context.closePath();
+      context.fill();
+      context.stroke();
+
+      context.fillStyle = "rgba(5,7,11,0.24)";
+      for (let i = 0; i < 4; i++) {
+        const angle = asteroid.seed + i * 2.1;
+        const craterR = r * (0.12 + (i % 2) * 0.05);
+        context.beginPath();
+        context.ellipse(Math.cos(angle) * r * 0.36, Math.sin(angle) * r * 0.32, craterR, craterR * 0.72, angle, 0, Math.PI * 2);
+        context.fill();
+      }
+
+      context.strokeStyle = "rgba(255,255,255,0.18)";
+      context.lineWidth = 1;
+      context.beginPath();
+      context.moveTo(-r * 0.45, -r * 0.12);
+      context.lineTo(r * 0.08, -r * 0.36);
+      context.lineTo(r * 0.42, -r * 0.05);
+      context.moveTo(-r * 0.22, r * 0.42);
+      context.lineTo(r * 0.38, r * 0.2);
+      context.stroke();
+      context.restore();
+    }
+
+    function drawShip(context, x, y, scale, tick, style, playerState) {
+      const s = 1.1 * scale;
+      const color = style.color;
+      const trailColor = style.trail === "ember" ? "#ff6b4a" : style.trail === "ice" ? "#8bd7ff" : style.trail === "spark" ? "#ffd166" : color;
+      context.save();
+      context.translate(x, y);
+
+      const shieldAlpha = playerState && playerState.shield > 0 ? 0.22 + Math.sin(tick * 10) * 0.08 : 0;
+      if (shieldAlpha > 0) {
+        context.save();
+        context.globalAlpha = shieldAlpha;
+        context.strokeStyle = "#8bd7ff";
+        context.lineWidth = 4;
+        context.shadowColor = "#8bd7ff";
+        context.shadowBlur = 18;
+        context.beginPath();
+        context.arc(0, 0, 32 * s, 0, Math.PI * 2);
+        context.stroke();
+        context.globalAlpha *= 0.55;
+        context.beginPath();
+        context.arc(0, 0, 39 * s, -tick * 2.5, Math.PI * 1.35 - tick * 2.5);
+        context.stroke();
+        context.restore();
+      }
+
+      drawEngineTrail(context, s, tick, trailColor, style.trail);
+      drawShipFins(context, s, color, style.fins);
+      drawShipHull(context, s, color, style.nose);
+      drawShipPanels(context, s, color, style);
+      drawCockpit(context, s, color, tick);
+      drawSkinDecal(context, s, style, tick);
+
+      if (playerState && playerState.hitPulse > 0) {
+        context.globalAlpha = playerState.hitPulse * 3;
+        context.fillStyle = "#ffffff";
+        context.beginPath();
+        context.arc(0, 0, 29 * s, 0, Math.PI * 2);
+        context.fill();
+      }
+      context.restore();
+    }
+
+    function drawEngineTrail(context, s, tick, color, trailStyle) {
+      const flame = 17 + Math.sin(tick * 32) * 5;
+      const glow = context.createRadialGradient(0, 25 * s, 2 * s, 0, 33 * s, 35 * s);
+      glow.addColorStop(0, rgba(color, 0.72));
+      glow.addColorStop(0.58, rgba(color, 0.22));
+      glow.addColorStop(1, rgba(color, 0));
+      context.fillStyle = glow;
+      context.beginPath();
+      context.ellipse(0, 26 * s, 25 * s, 34 * s, 0, 0, Math.PI * 2);
+      context.fill();
+
+      const offsets = trailStyle === "spark" ? [-12, 0, 12] : [-9, 9];
+      for (const offset of offsets) {
+        const length = flame + (offset === 0 ? 9 : 0) + Math.sin(tick * 19 + offset) * 3;
+        const gradient = context.createLinearGradient(offset * s, 16 * s, offset * s, (23 + length) * s);
+        gradient.addColorStop(0, "#ffffff");
+        gradient.addColorStop(0.3, color);
+        gradient.addColorStop(1, rgba(color, 0));
+        context.fillStyle = gradient;
+        context.beginPath();
+        context.moveTo((offset - 5) * s, 17 * s);
+        context.quadraticCurveTo(offset * s, (26 + length * 0.35) * s, offset * s, (26 + length) * s);
+        context.quadraticCurveTo((offset + 5) * s, (26 + length * 0.35) * s, (offset + 5) * s, 17 * s);
+        context.closePath();
+        context.fill();
+      }
+    }
+
+    function drawShipFins(context, s, color, fins) {
+      if (fins === "none") return;
+      const finWide = fins === "wide" ? 28 : fins === "hook" ? 24 : 18;
+      const hook = fins === "hook" ? 8 : 0;
+      const gradient = context.createLinearGradient(-finWide * s, -4 * s, finWide * s, 26 * s);
+      gradient.addColorStop(0, shade(color, -42));
+      gradient.addColorStop(0.5, shade(color, 18));
+      gradient.addColorStop(1, shade(color, -50));
+      context.fillStyle = gradient;
+      context.strokeStyle = "rgba(255,255,255,0.46)";
+      context.lineWidth = 1.5;
+      context.shadowColor = color;
+      context.shadowBlur = 8;
+
+      context.beginPath();
+      context.moveTo(-9 * s, -1 * s);
+      context.lineTo(-finWide * s, (7 + hook) * s);
+      context.lineTo((-19 - hook) * s, 24 * s);
+      context.lineTo(-8 * s, 17 * s);
+      context.closePath();
+      context.moveTo(9 * s, -1 * s);
+      context.lineTo(finWide * s, (7 + hook) * s);
+      context.lineTo((19 + hook) * s, 24 * s);
+      context.lineTo(8 * s, 17 * s);
+      context.closePath();
+      context.fill();
+      context.stroke();
+
+      context.shadowBlur = 0;
+      context.strokeStyle = "rgba(5,7,11,0.45)";
+      context.lineWidth = 1;
+      context.beginPath();
+      context.moveTo(-14 * s, 7 * s);
+      context.lineTo(-22 * s, 19 * s);
+      context.moveTo(14 * s, 7 * s);
+      context.lineTo(22 * s, 19 * s);
+      context.stroke();
+    }
+
+    function drawShipHull(context, s, color, nose) {
+      const hullGradient = context.createLinearGradient(0, -33 * s, 0, 29 * s);
+      hullGradient.addColorStop(0, shade(color, 44));
+      hullGradient.addColorStop(0.38, color);
+      hullGradient.addColorStop(1, shade(color, -56));
+      context.fillStyle = hullGradient;
+      context.strokeStyle = "rgba(255,255,255,0.76)";
+      context.lineWidth = 2;
+      context.shadowColor = color;
+      context.shadowBlur = 12;
+      shipHullPath(context, s, nose);
+      context.fill();
+      context.shadowBlur = 0;
+      context.stroke();
+
+      context.fillStyle = "rgba(255,255,255,0.18)";
+      context.beginPath();
+      context.moveTo(0, -25 * s);
+      context.quadraticCurveTo(7 * s, -3 * s, 4 * s, 22 * s);
+      context.lineTo(0, 25 * s);
+      context.quadraticCurveTo(2 * s, -2 * s, 0, -25 * s);
+      context.fill();
+    }
+
+    function shipHullPath(context, s, nose) {
+      context.beginPath();
+      if (nose === "round") {
+        context.moveTo(0, -29 * s);
+        context.quadraticCurveTo(21 * s, -12 * s, 15 * s, 14 * s);
+        context.quadraticCurveTo(0, 28 * s, -15 * s, 14 * s);
+        context.quadraticCurveTo(-21 * s, -12 * s, 0, -29 * s);
+      } else if (nose === "split") {
+        context.moveTo(-10 * s, -31 * s);
+        context.lineTo(2 * s, -15 * s);
+        context.lineTo(10 * s, -31 * s);
+        context.lineTo(19 * s, 17 * s);
+        context.lineTo(0, 28 * s);
+        context.lineTo(-19 * s, 17 * s);
+      } else if (nose === "heavy") {
+        context.moveTo(0, -27 * s);
+        context.lineTo(22 * s, -3 * s);
+        context.lineTo(16 * s, 21 * s);
+        context.lineTo(0, 30 * s);
+        context.lineTo(-16 * s, 21 * s);
+        context.lineTo(-22 * s, -3 * s);
+      } else {
+        context.moveTo(0, -34 * s);
+        context.lineTo(18 * s, 18 * s);
+        context.lineTo(0, 29 * s);
+        context.lineTo(-18 * s, 18 * s);
+      }
+      context.closePath();
+    }
+
+    function drawShipPanels(context, s, color, style) {
+      context.save();
+      context.strokeStyle = "rgba(5,7,11,0.42)";
+      context.lineWidth = 1.2;
+      context.beginPath();
+      context.moveTo(-8 * s, -5 * s);
+      context.lineTo(-12 * s, 14 * s);
+      context.lineTo(-5 * s, 22 * s);
+      context.moveTo(8 * s, -5 * s);
+      context.lineTo(12 * s, 14 * s);
+      context.lineTo(5 * s, 22 * s);
+      context.moveTo(-12 * s, 7 * s);
+      context.lineTo(12 * s, 7 * s);
+      context.stroke();
+
+      context.fillStyle = shade(color, -38);
+      context.strokeStyle = "rgba(255,255,255,0.32)";
+      for (const side of [-1, 1]) {
+        context.beginPath();
+        context.ellipse(side * 13 * s, 14 * s, 4.2 * s, 8 * s, 0, 0, Math.PI * 2);
+        context.fill();
+        context.stroke();
+      }
+
+      context.fillStyle = rgba(style.trail === "ice" ? "#8bd7ff" : style.trail === "ember" ? "#ff6b4a" : "#ffd166", 0.92);
+      context.beginPath();
+      context.arc(-8 * s, 21 * s, 3 * s, 0, Math.PI * 2);
+      context.arc(8 * s, 21 * s, 3 * s, 0, Math.PI * 2);
+      context.fill();
+      context.restore();
+    }
+
+    function drawCockpit(context, s, color, tick) {
+      const glass = context.createLinearGradient(0, -21 * s, 0, 7 * s);
+      glass.addColorStop(0, "rgba(255,255,255,0.94)");
+      glass.addColorStop(0.38, rgba(color, 0.72));
+      glass.addColorStop(1, "rgba(5,7,11,0.86)");
+      context.fillStyle = glass;
+      context.strokeStyle = "rgba(255,255,255,0.62)";
+      context.lineWidth = 1.4;
+      context.beginPath();
+      context.ellipse(0, -8 * s, 6.4 * s, 12 * s, 0, 0, Math.PI * 2);
+      context.fill();
+      context.stroke();
+
+      context.globalAlpha = 0.65 + Math.sin(tick * 7) * 0.15;
+      context.fillStyle = "#ffffff";
+      context.beginPath();
+      context.ellipse(-2 * s, -13 * s, 1.7 * s, 4 * s, -0.3, 0, Math.PI * 2);
+      context.fill();
+      context.globalAlpha = 1;
+    }
+
+    function drawSkinDecal(context, s, style, tick) {
+      if (!style.skin || style.skin === "standard") return;
+      const accent = style.accent || "#ffffff";
+      const secondary = style.secondary || "#ffffff";
+      context.save();
+      context.strokeStyle = accent;
+      context.fillStyle = accent;
+      context.shadowColor = accent;
+      context.shadowBlur = 10;
+      context.lineWidth = 2;
+      context.globalAlpha = 0.82;
+      context.beginPath();
+      context.moveTo(-7 * s, -1 * s);
+      context.lineTo(0, 17 * s);
+      context.lineTo(7 * s, -1 * s);
+      context.stroke();
+      context.globalAlpha = 0.56 + Math.sin(tick * 8) * 0.12;
+      context.beginPath();
+      context.arc(0, 12 * s, 3.5 * s, 0, Math.PI * 2);
+      context.fill();
+
+      if (style.skin === "nebula") {
+        context.globalAlpha = 0.5;
+        context.strokeStyle = secondary;
+        context.lineWidth = 1.4;
+        context.beginPath();
+        context.ellipse(0, 1 * s, 13 * s, 24 * s, 0.55, 0, Math.PI * 2);
+        context.ellipse(0, 1 * s, 13 * s, 24 * s, -0.55, 0, Math.PI * 2);
+        context.stroke();
+        context.fillStyle = "#ffffff";
+        context.globalAlpha = 0.72 + Math.sin(tick * 5) * 0.16;
+        for (const dot of [[-8, -16, 1.5], [9, -10, 1.2], [-5, 10, 1], [7, 17, 1.3]]) {
+          context.beginPath();
+          context.arc(dot[0] * s, dot[1] * s, dot[2] * s, 0, Math.PI * 2);
+          context.fill();
+        }
+      } else if (style.skin === "hunter") {
+        context.globalAlpha = 0.9;
+        context.strokeStyle = accent;
+        context.lineWidth = 2.4;
+        for (const side of [-1, 1]) {
+          context.beginPath();
+          context.moveTo(side * 4 * s, -20 * s);
+          context.lineTo(side * 13 * s, -2 * s);
+          context.lineTo(side * 5 * s, 20 * s);
+          context.stroke();
+        }
+        context.fillStyle = secondary;
+        context.globalAlpha = 0.45;
+        context.beginPath();
+        context.moveTo(-10 * s, -5 * s);
+        context.lineTo(0, -17 * s);
+        context.lineTo(10 * s, -5 * s);
+        context.lineTo(0, -9 * s);
+        context.closePath();
+        context.fill();
+      } else if (style.skin === "tyrant") {
+        context.globalAlpha = 0.92;
+        context.fillStyle = accent;
+        context.beginPath();
+        context.moveTo(0, -24 * s);
+        context.lineTo(5 * s, -13 * s);
+        context.lineTo(0, -16 * s);
+        context.lineTo(-5 * s, -13 * s);
+        context.closePath();
+        context.fill();
+        context.strokeStyle = secondary;
+        context.lineWidth = 1.4;
+        context.globalAlpha = 0.72;
+        context.beginPath();
+        context.moveTo(-12 * s, 2 * s);
+        context.lineTo(-5 * s, 23 * s);
+        context.moveTo(12 * s, 2 * s);
+        context.lineTo(5 * s, 23 * s);
+        context.stroke();
+      } else if (style.skin === "meteor") {
+        context.globalAlpha = 0.74;
+        context.strokeStyle = accent;
+        context.lineWidth = 2;
+        context.beginPath();
+        context.moveTo(-12 * s, -18 * s);
+        context.lineTo(-2 * s, -4 * s);
+        context.lineTo(-9 * s, 12 * s);
+        context.moveTo(11 * s, -14 * s);
+        context.lineTo(2 * s, 3 * s);
+        context.lineTo(9 * s, 20 * s);
+        context.stroke();
+        context.fillStyle = secondary;
+        context.globalAlpha = 0.48 + Math.sin(tick * 10) * 0.12;
+        context.beginPath();
+        context.arc(-4 * s, 4 * s, 2.2 * s, 0, Math.PI * 2);
+        context.arc(6 * s, -8 * s, 1.7 * s, 0, Math.PI * 2);
+        context.fill();
+      }
+
+      if (style.skin === "meteor") {
+        context.globalAlpha = 0.38;
+        context.strokeStyle = "#ffffff";
+        context.beginPath();
+        context.moveTo(-10 * s, -13 * s);
+        context.lineTo(8 * s, 20 * s);
+        context.moveTo(8 * s, -14 * s);
+        context.lineTo(-7 * s, 22 * s);
+        context.stroke();
+      }
+      context.restore();
+    }
+
+    function shade(hex, percent) {
+      const value = parseInt(hex.slice(1), 16);
+      let r = (value >> 16) + percent;
+      let g = ((value >> 8) & 255) + percent;
+      let b = (value & 255) + percent;
+      r = clamp(r, 0, 255);
+      g = clamp(g, 0, 255);
+      b = clamp(b, 0, 255);
+      return `rgb(${r},${g},${b})`;
+    }
+
+    function rgba(hex, alpha) {
+      const value = parseInt(hex.slice(1), 16);
+      const r = value >> 16;
+      const g = (value >> 8) & 255;
+      const b = value & 255;
+      return `rgba(${r},${g},${b},${alpha})`;
+    }
+
+    function drawShot(context, shot) {
+      context.save();
+      context.strokeStyle = shot.color;
+      context.lineWidth = shot.pierce ? 4 : 3;
+      context.shadowColor = shot.color;
+      context.shadowBlur = 12;
+      context.beginPath();
+      context.moveTo(shot.x, shot.y + 10);
+      context.lineTo(shot.x + shot.vx * 0.02, shot.y - 12);
+      context.stroke();
+      context.restore();
+    }
+
+    function drawEnemyBullet(context, bullet) {
+      context.save();
+      context.fillStyle = bullet.color;
+      context.shadowColor = bullet.color;
+      context.shadowBlur = 10;
+      context.beginPath();
+      context.arc(bullet.x, bullet.y, bullet.radius, 0, Math.PI * 2);
+      context.fill();
+      context.restore();
+    }
+
+    function drawEnemy(context, enemy) {
+      context.save();
+      context.translate(enemy.x, enemy.y);
+      context.rotate(Math.sin(enemy.t * 2) * 0.12);
+      const r = enemy.radius;
+      drawEnemyGlow(context, r, enemy.color);
+
+      if (enemy.id === "brute") drawBruteAlien(context, enemy, r);
+      else if (enemy.id === "splitter") drawSplitterAlien(context, enemy, r);
+      else if (enemy.id === "sniper") drawSniperAlien(context, enemy, r);
+      else if (enemy.id === "shield") drawShieldAlien(context, enemy, r);
+      else if (enemy.id === "bomber") drawBomberAlien(context, enemy, r);
+      else if (enemy.id === "swarm") drawSwarmAlien(context, enemy, r);
+      else if (enemy.id === "zig") drawZigAlien(context, enemy, r);
+      else drawDroneAlien(context, enemy, r);
+
+      if (enemy.shield) {
+        context.save();
+        context.strokeStyle = "#b7ff5a";
+        context.globalAlpha = 0.54 + Math.sin(enemy.t * 8) * 0.12;
+        context.lineWidth = 2.5;
+        context.shadowColor = "#b7ff5a";
+        context.shadowBlur = 10;
+        context.beginPath();
+        context.arc(0, 0, r + 6, enemy.t * 1.3, Math.PI * 1.7 + enemy.t * 1.3);
+        context.stroke();
+        context.beginPath();
+        context.arc(0, 0, r + 11, -enemy.t, Math.PI * 1.15 - enemy.t);
+        context.stroke();
+        context.restore();
+      }
+      drawEnemyHp(context, enemy, r);
+      context.restore();
+    }
+
+    function drawEnemyGlow(context, r, color) {
+      const glow = context.createRadialGradient(0, 0, 1, 0, 0, r * 1.7);
+      glow.addColorStop(0, rgba(color, 0.32));
+      glow.addColorStop(0.62, rgba(color, 0.1));
+      glow.addColorStop(1, rgba(color, 0));
+      context.fillStyle = glow;
+      context.beginPath();
+      context.arc(0, 0, r * 1.75, 0, Math.PI * 2);
+      context.fill();
+    }
+
+    function enemyShell(context, color, top, bottom) {
+      const gradient = context.createLinearGradient(0, top, 0, bottom);
+      gradient.addColorStop(0, shade(color, 46));
+      gradient.addColorStop(0.45, color);
+      gradient.addColorStop(1, shade(color, -58));
+      context.fillStyle = gradient;
+      context.strokeStyle = "rgba(255,255,255,0.58)";
+      context.lineWidth = 2;
+      context.shadowColor = color;
+      context.shadowBlur = 8;
+    }
+
+    function drawAlienEye(context, x, y, rx, ry, color, t) {
+      context.save();
+      const eye = context.createRadialGradient(x - rx * 0.25, y - ry * 0.25, 1, x, y, Math.max(rx, ry));
+      eye.addColorStop(0, "#ffffff");
+      eye.addColorStop(0.34, color);
+      eye.addColorStop(1, "rgba(5,7,11,0.92)");
+      context.fillStyle = eye;
+      context.shadowColor = color;
+      context.shadowBlur = 8;
+      context.beginPath();
+      context.ellipse(x, y, rx, ry, 0, 0, Math.PI * 2);
+      context.fill();
+      context.fillStyle = "rgba(5,7,11,0.88)";
+      context.beginPath();
+      context.arc(x + Math.sin(t * 5) * rx * 0.18, y, Math.min(rx, ry) * 0.34, 0, Math.PI * 2);
+      context.fill();
+      context.restore();
+    }
+
+    function drawAlienMouth(context, y, width, color) {
+      context.save();
+      context.strokeStyle = "rgba(5,7,11,0.78)";
+      context.lineWidth = 2;
+      context.beginPath();
+      context.moveTo(-width * 0.5, y);
+      for (let i = 0; i < 5; i++) {
+        const x = -width * 0.5 + width * (i + 1) / 5;
+        const toothY = y + (i % 2 ? 3 : -2);
+        context.lineTo(x, toothY);
+      }
+      context.stroke();
+      context.strokeStyle = rgba(color, 0.42);
+      context.lineWidth = 1;
+      context.beginPath();
+      context.moveTo(-width * 0.38, y + 5);
+      context.lineTo(width * 0.38, y + 5);
+      context.stroke();
+      context.restore();
+    }
+
+    function drawTendrils(context, r, color, count, t, yBase = 0.45) {
+      context.save();
+      context.strokeStyle = rgba(color, 0.72);
+      context.fillStyle = shade(color, -34);
+      context.lineWidth = Math.max(1, r * 0.09);
+      context.lineCap = "round";
+      for (let i = 0; i < count; i++) {
+        const ratio = count === 1 ? 0 : i / (count - 1);
+        const startX = (ratio - 0.5) * r * 1.18;
+        const endX = startX + Math.sin(t * 2.2 + i) * r * 0.28;
+        const endY = r * (1.04 + (i % 2) * 0.22);
+        context.beginPath();
+        context.moveTo(startX, r * yBase);
+        context.quadraticCurveTo(startX * 0.65 + Math.sin(t + i) * r * 0.22, r * 0.84, endX, endY);
+        context.stroke();
+        context.beginPath();
+        context.arc(endX, endY, r * 0.1, 0, Math.PI * 2);
+        context.fill();
+      }
+      context.restore();
+    }
+
+    function drawSpikes(context, r, color, count, top = true) {
+      context.save();
+      context.fillStyle = shade(color, -36);
+      context.strokeStyle = "rgba(255,255,255,0.32)";
+      context.lineWidth = 1;
+      for (let i = 0; i < count; i++) {
+        const ratio = count === 1 ? 0.5 : i / (count - 1);
+        const x = (ratio - 0.5) * r * 1.35;
+        const y = top ? -r * 0.72 + Math.abs(ratio - 0.5) * r * 0.22 : r * 0.56;
+        const dir = top ? -1 : 1;
+        context.beginPath();
+        context.moveTo(x - r * 0.12, y);
+        context.lineTo(x, y + dir * r * 0.42);
+        context.lineTo(x + r * 0.12, y);
+        context.closePath();
+        context.fill();
+        context.stroke();
+      }
+      context.restore();
+    }
+
+    function drawDroneAlien(context, enemy, r) {
+      enemyShell(context, enemy.color, -r, r);
+      context.beginPath();
+      context.ellipse(0, 0, r * 1.1, r * 0.78, 0, 0, Math.PI * 2);
+      context.fill();
+      context.stroke();
+      context.shadowBlur = 0;
+      context.save();
+      context.globalAlpha = 0.72;
+      context.fillStyle = shade(enemy.color, -24);
+      context.beginPath();
+      context.ellipse(0, r * 0.12, r * 0.72, r * 0.34, 0, 0, Math.PI * 2);
+      context.fill();
+      context.restore();
+      drawAlienEye(context, -r * 0.27, -r * 0.12, r * 0.18, r * 0.16, enemy.color, enemy.t);
+      drawAlienEye(context, r * 0.27, -r * 0.12, r * 0.18, r * 0.16, enemy.color, enemy.t + 1);
+      drawAlienEye(context, 0, -r * 0.26, r * 0.16, r * 0.14, enemy.color, enemy.t + 2);
+      drawAlienMouth(context, r * 0.2, r * 0.7, enemy.color);
+      drawTendrils(context, r, enemy.color, 4, enemy.t, 0.38);
+    }
+
+    function drawZigAlien(context, enemy, r) {
+      enemyShell(context, enemy.color, -r, r);
+      context.beginPath();
+      context.moveTo(0, -r * 1.15);
+      context.lineTo(r * 0.65, -r * 0.55);
+      context.lineTo(r * 1.22, -r * 0.12);
+      context.lineTo(r * 0.45, r * 0.05);
+      context.lineTo(r * 0.78, r * 0.88);
+      context.lineTo(0, r * 0.48);
+      context.lineTo(-r * 0.78, r * 0.88);
+      context.lineTo(-r * 0.45, r * 0.05);
+      context.lineTo(-r * 1.22, -r * 0.12);
+      context.lineTo(-r * 0.65, -r * 0.55);
+      context.closePath();
+      context.fill();
+      context.stroke();
+      context.shadowBlur = 0;
+      drawSpikes(context, r, enemy.color, 3, true);
+      drawAlienEye(context, -r * 0.22, -r * 0.18, r * 0.18, r * 0.16, enemy.color, enemy.t);
+      drawAlienEye(context, r * 0.22, -r * 0.18, r * 0.18, r * 0.16, enemy.color, enemy.t + 1);
+      drawAlienMouth(context, r * 0.17, r * 0.62, enemy.color);
+      drawTendrils(context, r, enemy.color, 2, enemy.t, 0.35);
+    }
+
+    function drawBruteAlien(context, enemy, r) {
+      enemyShell(context, enemy.color, -r, r);
+      context.beginPath();
+      context.moveTo(0, -r * 1.04);
+      context.quadraticCurveTo(r * 0.9, -r * 0.95, r * 1.1, -r * 0.05);
+      context.quadraticCurveTo(r * 0.94, r * 0.92, 0, r * 1.08);
+      context.quadraticCurveTo(-r * 0.94, r * 0.92, -r * 1.1, -r * 0.05);
+      context.quadraticCurveTo(-r * 0.9, -r * 0.95, 0, -r * 1.04);
+      context.closePath();
+      context.fill();
+      context.stroke();
+      context.shadowBlur = 0;
+      drawSpikes(context, r, enemy.color, 5, true);
+      context.strokeStyle = "rgba(5,7,11,0.5)";
+      context.lineWidth = 2;
+      for (let i = 0; i < 7; i++) {
+        const angle = -Math.PI * 0.9 + i * Math.PI * 1.8 / 6;
+        context.beginPath();
+        context.moveTo(Math.cos(angle) * r * 0.25, Math.sin(angle) * r * 0.18);
+        context.lineTo(Math.cos(angle) * r * 0.78, Math.sin(angle) * r * 0.68);
+        context.stroke();
+      }
+      context.fillStyle = "rgba(5,7,11,0.74)";
+      context.beginPath();
+      context.ellipse(0, -r * 0.04, r * 0.48, r * 0.32, 0, 0, Math.PI * 2);
+      context.fill();
+      drawAlienEye(context, -r * 0.18, -r * 0.06, r * 0.17, r * 0.13, enemy.color, enemy.t);
+      drawAlienEye(context, r * 0.18, -r * 0.06, r * 0.17, r * 0.13, enemy.color, enemy.t + 1);
+      drawAlienMouth(context, r * 0.27, r * 0.65, enemy.color);
+    }
+
+    function drawSplitterAlien(context, enemy, r) {
+      enemyShell(context, enemy.color, -r, r);
+      context.beginPath();
+      context.moveTo(0, -r * 1.18);
+      context.quadraticCurveTo(r * 1.1, -r * 0.15, r * 0.62, r * 0.92);
+      context.quadraticCurveTo(r * 0.18, r * 0.56, 0, r * 0.82);
+      context.quadraticCurveTo(-r * 0.18, r * 0.56, -r * 0.62, r * 0.92);
+      context.quadraticCurveTo(-r * 1.1, -r * 0.15, 0, -r * 1.18);
+      context.closePath();
+      context.fill();
+      context.stroke();
+      context.shadowBlur = 0;
+      context.fillStyle = rgba("#ffffff", 0.18);
+      for (const blob of [[-0.34, 0.18, 0.22], [0.36, 0.12, 0.2], [0, 0.42, 0.16]]) {
+        context.beginPath();
+        context.arc(blob[0] * r, blob[1] * r, blob[2] * r, 0, Math.PI * 2);
+        context.fill();
+      }
+      drawAlienEye(context, 0, -r * 0.16, r * 0.22, r * 0.2, enemy.color, enemy.t);
+      drawAlienMouth(context, r * 0.2, r * 0.48, enemy.color);
+      drawTendrils(context, r, enemy.color, 3, enemy.t, 0.5);
+    }
+
+    function drawSniperAlien(context, enemy, r) {
+      enemyShell(context, enemy.color, -r * 1.25, r * 1.25);
+      context.beginPath();
+      context.ellipse(0, 0, r * 0.78, r * 1.16, 0, 0, Math.PI * 2);
+      context.fill();
+      context.stroke();
+      context.shadowBlur = 0;
+      const chargeAlpha = enemy.charge > 0 ? 0.34 + Math.sin(enemy.t * 20) * 0.16 : 0.12;
+      context.fillStyle = rgba(enemy.color, chargeAlpha);
+      context.beginPath();
+      context.arc(0, -r * 0.1, r * 0.9, 0, Math.PI * 2);
+      context.fill();
+      context.strokeStyle = rgba(enemy.color, 0.58);
+      context.lineWidth = 2;
+      context.beginPath();
+      context.moveTo(-r * 0.58, -r * 0.48);
+      context.quadraticCurveTo(-r * 1.16, -r * 0.18, -r * 0.86, r * 0.36);
+      context.moveTo(r * 0.58, -r * 0.48);
+      context.quadraticCurveTo(r * 1.16, -r * 0.18, r * 0.86, r * 0.36);
+      context.stroke();
+      drawAlienEye(context, 0, -r * 0.28, r * 0.42, r * 0.32, enemy.color, enemy.t);
+      drawTendrils(context, r, enemy.color, 5, enemy.t, 0.38);
+    }
+
+    function drawShieldAlien(context, enemy, r) {
+      context.save();
+      context.globalAlpha = 0.16 + Math.sin(enemy.t * 3) * 0.04;
+      context.fillStyle = enemy.color;
+      context.beginPath();
+      context.arc(0, 0, r * 1.9, 0, Math.PI * 2);
+      context.fill();
+      context.restore();
+      enemyShell(context, enemy.color, -r, r);
+      context.beginPath();
+      context.ellipse(0, -r * 0.08, r * 0.96, r * 0.9, 0, 0, Math.PI * 2);
+      context.fill();
+      context.stroke();
+      context.shadowBlur = 0;
+      context.strokeStyle = "rgba(183,255,90,0.62)";
+      context.lineWidth = 2;
+      polygon(context, 8, r * 0.72, Math.PI / 8);
+      context.stroke();
+      context.fillStyle = "rgba(5,7,11,0.72)";
+      context.beginPath();
+      context.arc(0, 0, r * 0.38, 0, Math.PI * 2);
+      context.fill();
+      drawAlienEye(context, -r * 0.18, -r * 0.04, r * 0.15, r * 0.14, enemy.color, enemy.t);
+      drawAlienEye(context, r * 0.18, -r * 0.04, r * 0.15, r * 0.14, enemy.color, enemy.t + 1);
+      drawTendrils(context, r, enemy.color, 6, enemy.t, 0.45);
+    }
+
+    function drawBomberAlien(context, enemy, r) {
+      enemyShell(context, enemy.color, -r, r);
+      context.beginPath();
+      context.ellipse(0, r * 0.04, r * 0.98, r * 1.05, 0, 0, Math.PI * 2);
+      context.closePath();
+      context.fill();
+      context.stroke();
+      context.shadowBlur = 0;
+      context.fillStyle = rgba("#ffffff", 0.18);
+      context.beginPath();
+      context.ellipse(-r * 0.22, -r * 0.26, r * 0.25, r * 0.34, -0.4, 0, Math.PI * 2);
+      context.fill();
+      context.fillStyle = shade(enemy.color, -45);
+      for (const side of [-1, 1]) {
+        context.beginPath();
+        context.ellipse(side * r * 0.48, r * 0.5, r * 0.22, r * 0.34, 0, 0, Math.PI * 2);
+        context.fill();
+      }
+      drawSpikes(context, r, enemy.color, 4, false);
+      drawAlienEye(context, -r * 0.18, -r * 0.22, r * 0.16, r * 0.14, enemy.color, enemy.t);
+      drawAlienEye(context, r * 0.18, -r * 0.22, r * 0.16, r * 0.14, enemy.color, enemy.t + 1);
+      drawAlienMouth(context, r * 0.18, r * 0.55, enemy.color);
+    }
+
+    function drawSwarmAlien(context, enemy, r) {
+      enemyShell(context, enemy.color, -r, r);
+      context.beginPath();
+      context.moveTo(0, -r * 1.2);
+      context.quadraticCurveTo(r * 0.78, -r * 0.44, r * 0.42, r * 0.76);
+      context.lineTo(0, r * 0.48);
+      context.lineTo(-r * 0.42, r * 0.76);
+      context.quadraticCurveTo(-r * 0.78, -r * 0.44, 0, -r * 1.2);
+      context.closePath();
+      context.fill();
+      context.stroke();
+      context.shadowBlur = 0;
+      context.strokeStyle = rgba(enemy.color, 0.72);
+      context.lineWidth = 1.5;
+      for (const side of [-1, 1]) {
+        context.beginPath();
+        context.moveTo(side * r * 0.35, -r * 0.1);
+        context.quadraticCurveTo(side * r * 1.08, r * 0.08, side * r * 0.62, r * 0.58);
+        context.stroke();
+      }
+      drawAlienEye(context, 0, -r * 0.18, r * 0.22, r * 0.17, enemy.color, enemy.t);
+      drawTendrils(context, r, enemy.color, 2, enemy.t, 0.32);
+    }
+
+    function drawEnemyHp(context, enemy, r) {
+      const hpPct = clamp(enemy.hp / enemy.maxHp, 0, 1);
+      if (hpPct >= 0.98) return;
+      context.save();
+      context.globalAlpha = 0.92;
+      context.fillStyle = "rgba(255,255,255,0.16)";
+      context.fillRect(-r, r + 8, r * 2, 4);
+      context.fillStyle = enemy.color;
+      context.fillRect(-r, r + 8, r * 2 * hpPct, 4);
+      context.restore();
+    }
+
+    function polygon(context, sides, radius, rotation) {
+      context.beginPath();
+      for (let i = 0; i < sides; i++) {
+        const angle = rotation + i * Math.PI * 2 / sides;
+        const x = Math.cos(angle) * radius;
+        const y = Math.sin(angle) * radius;
+        if (i === 0) context.moveTo(x, y);
+        else context.lineTo(x, y);
+      }
+      context.closePath();
+    }
+
+    function drawBoss(context, boss) {
+      context.save();
+      context.translate(boss.x, boss.y);
+      context.rotate(Math.sin(boss.t) * 0.06);
+      const r = boss.radius;
+
+      const glow = context.createRadialGradient(0, 0, r * 0.2, 0, 0, r * 1.65);
+      glow.addColorStop(0, rgba(boss.color, 0.34));
+      glow.addColorStop(0.58, rgba(boss.color, 0.1));
+      glow.addColorStop(1, rgba(boss.color, 0));
+      context.fillStyle = glow;
+      context.beginPath();
+      context.arc(0, 0, r * 1.7, 0, Math.PI * 2);
+      context.fill();
+
+      const shell = context.createLinearGradient(0, -r, 0, r);
+      shell.addColorStop(0, shade(boss.color, 48));
+      shell.addColorStop(0.42, boss.color);
+      shell.addColorStop(1, shade(boss.color, -62));
+      context.fillStyle = shell;
+      context.strokeStyle = "rgba(255,255,255,0.62)";
+      context.lineWidth = 3;
+      context.shadowColor = boss.color;
+      context.shadowBlur = 18;
+      context.beginPath();
+      context.moveTo(0, -r * 1.12);
+      context.lineTo(r * 0.62, -r * 0.72);
+      context.lineTo(r * 1.12, -r * 0.08);
+      context.lineTo(r * 0.82, r * 0.76);
+      context.lineTo(r * 0.24, r * 1.1);
+      context.lineTo(0, r * 0.72);
+      context.lineTo(-r * 0.24, r * 1.1);
+      context.lineTo(-r * 0.82, r * 0.76);
+      context.lineTo(-r * 1.12, -r * 0.08);
+      context.lineTo(-r * 0.62, -r * 0.72);
+      context.closePath();
+      context.fill();
+      context.shadowBlur = 0;
+      context.stroke();
+
+      context.strokeStyle = "rgba(5,7,11,0.48)";
+      context.lineWidth = 3;
+      context.beginPath();
+      context.moveTo(0, -r * 0.92);
+      context.lineTo(0, r * 0.68);
+      context.moveTo(-r * 0.72, -r * 0.08);
+      context.lineTo(r * 0.72, -r * 0.08);
+      context.moveTo(-r * 0.42, r * 0.64);
+      context.lineTo(r * 0.42, r * 0.64);
+      context.stroke();
+
+      for (const side of [-1, 1]) {
+        context.fillStyle = shade(boss.color, -50);
+        context.beginPath();
+        context.ellipse(side * r * 0.68, r * 0.18, r * 0.18, r * 0.45, 0.16 * side, 0, Math.PI * 2);
+        context.fill();
+        context.strokeStyle = "rgba(255,255,255,0.34)";
+        context.stroke();
+        context.fillStyle = boss.index % 2 ? "#ffd166" : "#b7ff36";
+        context.beginPath();
+        context.arc(side * r * 0.7, r * 0.52, r * 0.07, 0, Math.PI * 2);
+        context.fill();
+      }
+
+      drawAlienEye(context, 0, -r * 0.18, r * 0.28, r * 0.25, boss.color, boss.t);
+      context.strokeStyle = "#ffffff";
+      context.globalAlpha = 0.32 + Math.sin(boss.t * 8) * 0.12;
+      context.lineWidth = 5;
+      context.beginPath();
+      context.arc(0, 0, r + 12, boss.t * 0.8, Math.PI * 1.55 + boss.t * 0.8);
+      context.stroke();
+      context.restore();
+    }
+
+    function drawPickup(context, pickup) {
+      context.save();
+      context.translate(pickup.x, pickup.y);
+      context.rotate(performance.now() / 600);
+      context.fillStyle = pickup.color;
+      context.strokeStyle = "#ffffff";
+      context.lineWidth = 2;
+      polygon(context, 6, pickup.radius, Math.PI / 6);
+      context.fill();
+      context.stroke();
+      context.fillStyle = "rgba(5,7,11,0.78)";
+      context.font = "900 10px system-ui";
+      context.textAlign = "center";
+      context.textBaseline = "middle";
+      context.fillText(powerDefs[pickup.type].name.slice(0, 1), 0, 0);
+      context.restore();
+    }
+
+    function drawParticle(context, particle) {
+      context.save();
+      context.globalAlpha = clamp(particle.life * 2, 0, 1);
+      context.fillStyle = particle.color;
+      context.beginPath();
+      context.arc(particle.x, particle.y, particle.r, 0, Math.PI * 2);
+      context.fill();
+      context.restore();
+    }
+
+    function drawPreview(context, target, tick) {
+      resizeCanvas(target, context);
+      const width = target.clientWidth;
+      const height = target.clientHeight;
+      context.clearRect(0, 0, width, height);
+      const gradient = context.createLinearGradient(0, 0, width, height);
+      gradient.addColorStop(0, "rgba(34,211,182,0.16)");
+      gradient.addColorStop(0.48, "rgba(255,255,255,0.04)");
+      gradient.addColorStop(1, "rgba(255,107,74,0.14)");
+      context.fillStyle = gradient;
+      context.fillRect(0, 0, width, height);
+      for (let i = 0; i < 46; i++) {
+        const x = (i * 47 + tick * 18) % (width + 40) - 20;
+        const y = (i * 83 + tick * 34) % (height + 40) - 20;
+        context.globalAlpha = 0.26 + (i % 5) * 0.08;
+        context.fillStyle = i % 3 ? "#ffffff" : "#ffd166";
+        context.beginPath();
+        context.arc(x, y, 1 + (i % 3) * 0.45, 0, Math.PI * 2);
+        context.fill();
+      }
+      context.globalAlpha = 1;
+      drawShip(context, width / 2, height / 2 + 12, 1.65, tick, getShipStyle(), { shield: 5, hitPulse: 0 });
+    }
+
+    function showToast(text) {
+      toast.textContent = text;
+      toast.classList.add("show");
+      clearTimeout(showToast.timer);
+      showToast.timer = setTimeout(() => toast.classList.remove("show"), 1200);
+    }
+
+    function togglePause() {
+      if (state !== "playing") return;
+      game.paused = !game.paused;
+      if (game.paused) {
+        state = "paused";
+        qs("pauseBtn").textContent = ">";
+        showToast("Pausa");
+      }
+    }
+
+    function resumeGame() {
+      if (state !== "paused") return;
+      state = "playing";
+      game.paused = false;
+      qs("pauseBtn").textContent = "II";
+      lastTime = performance.now();
+      raf = requestAnimationFrame(loop);
+      showToast("Ripresa");
+    }
+
+    function openHangar() {
+      state = "menu";
+      cancelAnimationFrame(raf);
+      menuScreen.classList.remove("hidden");
+      gameOverScreen.classList.add("hidden");
+      hud.classList.add("hidden");
+      bottomControls.classList.add("hidden");
+      bossBar.classList.add("hidden");
+      buildMenu();
+    }
+
+    function persistSession() {
+      saveCustom();
+      if (game) {
+        updateQuestProgress();
+        saveQuestState();
+        saveBestScore(game.score);
+      } else {
+        saveQuestState();
+      }
+    }
+
+    function bindEvents() {
+      window.addEventListener("resize", resize);
+      window.addEventListener("orientationchange", () => setTimeout(resize, 120));
+      window.addEventListener("beforeunload", persistSession);
+      document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "hidden") persistSession();
+      });
+      qs("startBtn").addEventListener("click", startGame);
+      qs("retryBtn").addEventListener("click", startGame);
+      qs("hangarBtn").addEventListener("click", openHangar);
+      qs("resetBtn").addEventListener("click", () => {
+        custom = { ...defaultCustom };
+        saveCustom();
+        menuChanged();
+      });
+      qs("pauseBtn").addEventListener("click", () => {
+        if (state === "paused") resumeGame();
+        else togglePause();
+      });
+      window.addEventListener("keydown", event => {
+        const key = event.key.toLowerCase();
+        keys.add(key);
+        if (key === "p" || key === "escape") {
+          event.preventDefault();
+          if (state === "paused") resumeGame();
+          else togglePause();
+        }
+      });
+      window.addEventListener("keyup", event => keys.delete(event.key.toLowerCase()));
+
+      canvas.addEventListener("pointerdown", event => {
+        if (state === "paused") {
+          resumeGame();
+          return;
+        }
+        pointer.active = true;
+        canvas.setPointerCapture(event.pointerId);
+        setPointer(event);
+      });
+      canvas.addEventListener("pointermove", event => {
+        if (!pointer.active) return;
+        setPointer(event);
+      });
+      canvas.addEventListener("pointerup", event => {
+        pointer.active = false;
+        try {
+          canvas.releasePointerCapture(event.pointerId);
+        } catch (err) {}
+      });
+      canvas.addEventListener("pointercancel", () => {
+        pointer.active = false;
+      });
+    }
+
+    function setPointer(event) {
+      const rect = canvas.getBoundingClientRect();
+      pointer.x = event.clientX - rect.left;
+      pointer.y = event.clientY - rect.top;
+    }
+
+    function previewLoop(now) {
+      previewTick = now / 1000;
+      if (state !== "playing" && state !== "paused") {
+        drawPreview(previewCtx, previewCanvas, previewTick);
+        drawPreview(overCtx, overCanvas, previewTick);
+      }
+      requestAnimationFrame(previewLoop);
+    }
+
+    setupTabs();
+    buildMenu();
+    bindEvents();
+    resize();
+    requestAnimationFrame(previewLoop);
+  </script>
+</body>
+</html>
